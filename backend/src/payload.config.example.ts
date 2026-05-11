@@ -1,8 +1,15 @@
+/**
+ * PAYLOAD CONFIG EXAMPLE FILE
+ * Copy this file to payload.config.ts and add your actual values
+ * NEVER commit payload.config.ts to git!
+ */
+
 import { buildConfig } from 'payload/config';
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
 import { slateEditor } from '@payloadcms/richtext-slate';
 import { webpackBundler } from '@payloadcms/bundler-webpack';
 
+// Collections
 import Users from './collections/Users';
 import HomeBanners from './collections/HomeBanners';
 import DiscoverProducts from './collections/DiscoverProducts';
@@ -18,14 +25,14 @@ import WishlistItems from './collections/WishlistItems';
 import Orders from './collections/Orders';
 
 export default buildConfig({
-  serverURL: 'http://localhost:5000',
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:5000',
   admin: {
     user: Users.slug,
     bundler: webpackBundler(),
   },
   editor: slateEditor({}),
   db: mongooseAdapter({
-    url: process.env.MONGODB_URI,
+    url: process.env.MONGODB_URI || '',  // ALWAYS use env variable, never hardcode!
   }),
   collections: [
     Users,

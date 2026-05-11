@@ -18,12 +18,30 @@ build
 **/dist
 **/build
 
-# Env files
+# ========== SECURITY - Sensitive files ==========
+# Environment files (CRITICAL - never commit)
 .env
 .env.*
 *.local
+**/.env
+**/.env.*
 
-# Editor / OS files
+# Payload config files with credentials
+**/payload.config.ts
+**/payload.config.js
+**/*.config.ts
+!**/*.config.example.ts
+
+# Data files (db.json contains data but not credentials - optional)
+data/
+**/data/*.json
+*.db.json
+
+# IDE configs with secrets
+**/.vscode/settings.json
+**/.vscode/launch.json
+
+# ========== Editor / OS files ==========
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -33,3 +51,36 @@ build
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
+desktop.ini
+
+# ========== Temporary files ==========
+*.tmp
+*.temp
+*.cache
+**/.cache
+
+# ========== Package manager files ==========
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ========== TypeScript ==========
+*.tsbuildinfo
+
+# ========== Testing ==========
+coverage
+.nyc_output
+**/coverage
+
+# ========== Debug ==========
+debug.log
+**/debug.log
+
+# ========== Secrets / Keys ==========
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+**/secrets/
