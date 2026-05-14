@@ -5,6 +5,9 @@ const HomeBanners: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
   },
+  access: {
+    read: () => true,  // Allow public read access
+  },
   fields: [
     {
       name: 'pageName',

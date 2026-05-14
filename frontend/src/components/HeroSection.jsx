@@ -12,10 +12,10 @@ const HeroSection = ({ pageName, isShopPage }) => {
     const fetchBannerData = async () => {
       try {
         const response = await api.getHomeBanner(pageName)
-        const banner = response.data
+        const banner = response.data || {}
         
         // Image URL fix karein
-        if (banner.imageUrl) {
+        if (banner && banner.imageUrl) {
           if (banner.imageUrl.startsWith('img/')) {
             banner.imageUrl = '/' + banner.imageUrl
           }
@@ -97,7 +97,7 @@ const HeroSection = ({ pageName, isShopPage }) => {
             <div className="hero-content">
               <p>VISIT ALL OF OUR PRODUCTS</p>
               <h1>
-                <span>{bannerData.title}</span>
+                <span>{bannerData.title || 'Welcome'}</span>
               </h1>
               {bannerData.subtitle && <h5>{bannerData.subtitle}</h5>}
               <p>{bannerData.description}</p>
@@ -111,7 +111,7 @@ const HeroSection = ({ pageName, isShopPage }) => {
           <Col lg={6} className="text-lg-end">
             <div className="hero-image float-lg-end">
               <img 
-                src={bannerData.imageUrl} 
+                src={bannerData.imageUrl || '/img/img_banner_shop.webp'} 
                 className="my-img img-fluid" 
                 alt="Hero Banner" 
                 onError={(e) => {

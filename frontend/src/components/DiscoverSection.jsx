@@ -11,9 +11,16 @@ const DiscoverSection = () => {
     const fetchProducts = async () => {
       try {
         const response = await api.getDiscoverProducts();
-        setProducts(response.data);
+        console.log('===== DISCOVER PRODUCTS DEBUG =====');
+        console.log('Full response:', response);
+        console.log('response.data:', response.data);
+        console.log('Is array?', Array.isArray(response.data));
+        console.log('Length:', response.data?.length);
+        console.log('===================================');
+        setProducts(response.data || []);
       } catch (error) {
         console.error('Error fetching discover products:', error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -23,7 +30,27 @@ const DiscoverSection = () => {
   }, []);
 
   if (loading) {
-    return null;
+    return (
+      <section className="discover-section">
+        <Container>
+          <h2><span>Discover more.</span> <strong>Good things are waiting for you</strong></h2>
+          <div>Loading...</div>
+        </Container>
+      </section>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <section className="discover-section">
+        <Container>
+          <h2><span>Discover more.</span> <strong>Good things are waiting for you</strong></h2>
+          <div className="text-center py-5">
+            <p>No products found. Products count: {products.length}</p>
+          </div>
+        </Container>
+      </section>
+    );
   }
 
   return (
@@ -31,7 +58,7 @@ const DiscoverSection = () => {
       <Container>
         <h2><span>Discover more.</span> <strong>Good things are waiting for you</strong></h2>
         <Row>
-          {products.map((product, index) => (
+          {products.map((product) => (
             <Col md={3} key={product.id}>
               <div className="product-card" style={{ backgroundColor: product.bgColor, cursor: 'default' }}>
                 <span className="badge-new">{product.badge}</span>
@@ -41,9 +68,6 @@ const DiscoverSection = () => {
                   loading="lazy"
                 ></div>
                 <h5 className="mt-3">{product.title}</h5>
-                {/* <Link to="/shop">
-                  <button className="btn-read-more mt-1">Shop Now</button>
-                </Link> */}
               </div>
             </Col>
           ))}

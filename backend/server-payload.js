@@ -1,22 +1,52 @@
-const express = require('express');
-const payload = require('payload');
-const path = require('path');
+import { buildConfig } from 'payload/config';
+import { mongooseAdapter } from '@payloadcms/db-mongodb';
+import { slateEditor } from '@payloadcms/richtext-slate';
+import { webpackBundler } from '@payloadcms/bundler-webpack';
 
-const app = express();
+import Users from './collections/Users';
+import HomeBanners from './collections/HomeBanners';
+import DiscoverProducts from './collections/DiscoverProducts';
+import AboutContent from './collections/AboutContent';
+import Categories from './collections/Categories';
+import TopRatingProducts from './collections/TopRatingProducts';
+import Testimonials from './collections/Testimonials';
+import Blogs from './collections/Blogs';
+import Products from './collections/Products';
+import Team from './collections/Team';
+import CartItems from './collections/CartItems';
+import WishlistItems from './collections/WishlistItems';
+import Orders from './collections/Orders';
 
-const start = async () => {
-  await payload.init({
-    secret: 'mysecretkey123',
-    express: app,
-    config: path.join(__dirname, 'src', 'payload.config.js'),
-    onInit: () => {
-      console.log('Payload Admin URL: http://localhost:5000/admin');
-    },
-  });
-
-  app.listen(5000, () => {
-    console.log('Server running on http://localhost:5000');
-  });
-};
-
-start();
+export default buildConfig({
+  serverURL: 'http://localhost:5000',
+  admin: {
+    user: Users.slug,
+    bundler: webpackBundler(),
+  },
+  editor: slateEditor({}),
+  db: mongooseAdapter({
+    url: process.env.MONGODB_URI || '',
+  }),
+  collections: [
+    Users,
+    HomeBanners,
+    DiscoverProducts,
+    AboutContent,
+    Categories,
+    TopRatingProducts,
+    Testimonials,
+    Blogs,
+    Products,
+    Team,
+    CartItems,
+    WishlistItems,
+    Orders,
+  ],
+  cors: {
+    origins: ['http://localhost:3000', 'http://localhost:5000'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    headers: ['Content-Type', 'Authorization'],
+    credentials: true,
+  },
+  csrf: ['http://localhost:3000'],
+});

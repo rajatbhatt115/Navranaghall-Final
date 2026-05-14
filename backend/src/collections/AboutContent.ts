@@ -5,6 +5,9 @@ const AboutContent: CollectionConfig = {
   admin: {
     useAsTitle: 'experienceTitle',
   },
+  access: {
+    read: () => true,  // Allow public read access
+  },
   fields: [
     {
       name: 'experienceTitle',

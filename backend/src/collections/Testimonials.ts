@@ -5,6 +5,9 @@ const Testimonials: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
   },
+  access: {
+    read: () => true,  // Allow public read access
+  },
   fields: [
     {
       name: 'name',

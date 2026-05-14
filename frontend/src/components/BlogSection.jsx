@@ -7,30 +7,36 @@ const BlogSection = () => {
   const [blogData, setBlogData] = useState(null)
   const [loading, setLoading] = useState(true)
 
- useEffect(() => {
-  const fetchBlogData = async () => {
-    try {
-      const response = await api.getBlogHome();
-      setBlogData(response.data);  // response.data use karein
-    } catch (error) {
-      console.error('Error fetching blog data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchBlogData = async () => {
+      try {
+        const response = await api.getBlogHome();
+        console.log('Blog API Response:', response.data);
+        setBlogData(response.data);
+      } catch (error) {
+        console.error('Error fetching blog data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchBlogData();
-}, []);
+    fetchBlogData();
+  }, []);
 
   if (loading) {
-    return null
+    return null;
   }
 
-  if (!blogData) {
-    return null
+  if (!blogData || !blogData.mainBlog) {
+    return null;
   }
 
-  const { mainBlog, smallBlogs } = blogData
+  const { mainBlog, smallBlogs = [] } = blogData;
+
+  // Safety check - if mainBlog has no id, don't render
+  if (!mainBlog || !mainBlog.id) {
+    return null;
+  }
 
   return (
     <section className="blog-section">
@@ -67,7 +73,7 @@ const BlogSection = () => {
 
           {/* Right Column - Small Blog Posts */}
           <Col lg={6} style={{ height: '100%' }}>
-            {smallBlogs.map(blog => (
+            {smallBlogs && smallBlogs.length > 0 ? smallBlogs.map(blog => (
               <Link to={`/blog/${blog.id}`} className="small-blog-link" key={blog.id}>
                 <div className="small-blog-card">
                   <div 
@@ -92,7 +98,7 @@ const BlogSection = () => {
                   </div>
                 </div>
               </Link>
-            ))}
+            )) : null}
           </Col>
         </Row>
       </Container>

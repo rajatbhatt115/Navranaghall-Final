@@ -5,6 +5,9 @@ const TopRatingProducts: CollectionConfig = {
   admin: {
     useAsTitle: 'category',
   },
+  access: {
+    read: () => true,  // Allow public read access
+  },
   fields: [
     {
       name: 'category',
