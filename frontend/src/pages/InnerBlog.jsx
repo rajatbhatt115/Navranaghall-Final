@@ -4,6 +4,17 @@ import HeroSection from '../components/HeroSection'
 import api from '../api'
 import { useParams } from 'react-router-dom'
 
+// Helper function to format date - remove time
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
 const InnerBlog = () => {
   const { id } = useParams()
   const [blogData, setBlogData] = useState(null)
@@ -21,17 +32,11 @@ const InnerBlog = () => {
     const fetchBlogData = async () => {
       try {
         setLoading(true)
-        console.log('Fetching blog ID:', id)
-
-        // API से blog data fetch करें
         const response = await api.getInnerBlog(id)
-        console.log('API Response:', response.data)
-
         if (response.data) {
           setBlogData(response.data)
           setComments(response.data.comments || [])
         } else {
-          console.error('No data received from API')
           setBlogData(null)
         }
       } catch (error) {
@@ -54,38 +59,21 @@ const InnerBlog = () => {
     })
   }
 
-
-  // InnerBlog.js में handleCommentSubmit फंक्शन को अपडेट करें:
-
   const handleCommentSubmit = async (e) => {
     e.preventDefault()
 
     try {
-      console.log('Submitting comment for blog ID:', id);
-      console.log('Comment form data:', commentForm);
-
       const newCommentData = {
         name: `${commentForm.firstName} ${commentForm.lastName}`,
         text: commentForm.message,
-        // केवल name और text भेज रहे हैं
         avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`
       }
 
-      console.log('Data being sent to API:', newCommentData);
-
-      // API call to save comment
       const response = await api.addBlogComment(id, newCommentData);
 
-      console.log('API response:', response);
-      console.log('Response data:', response.data);
-
       if (response.data) {
-        // Update comments state with new comment
         setComments([response.data, ...comments]);
-
         alert('Your comment has been posted successfully!');
-
-        // Reset form
         setCommentForm({
           firstName: '',
           lastName: '',
@@ -94,12 +82,10 @@ const InnerBlog = () => {
           message: ''
         });
       } else {
-        console.error('No data in response');
         alert('Failed to post comment. Please try again.');
       }
     } catch (error) {
       console.error('Error posting comment:', error);
-      console.error('Error details:', error.response?.data || error.message);
       alert('Failed to post comment. Please try again.');
     }
   };
@@ -130,12 +116,10 @@ const InnerBlog = () => {
     <>
       <HeroSection pageName="blog" />
 
-      {/* Blog Content Section */}
       <section className="blog-content-section">
         <Container>
           <Row>
             <Col xs={12}>
-              {/* Blog Post Image */}
               <div
                 className="blog-post-image"
                 style={{
@@ -149,13 +133,10 @@ const InnerBlog = () => {
                 loading="lazy"
               ></div>
 
-              {/* Blog Post Content */}
               <div className="blog-post-content">
                 <h3>{blogData.title}</h3>
-
                 <p>{blogData.content}</p>
 
-                {/* Author Info */}
                 <div className="blog-post-meta">
                   <div
                     className="author-avatar"
@@ -171,7 +152,7 @@ const InnerBlog = () => {
                   ></div>
                   <div className="author-info">
                     <div className="author-name">{blogData.author}</div>
-                    <div className="post-date">{blogData.date}</div>
+                    <div className="post-date">{formatDate(blogData.date)}</div>
                   </div>
                 </div>
               </div>
@@ -180,11 +161,9 @@ const InnerBlog = () => {
         </Container>
       </section>
 
-      {/* Comment Section */}
       <section className="comment-section">
         <Container>
           <Row>
-            {/* Leave Comment Form */}
             <Col lg={6} className="mb-4 mb-lg-0 comment-column">
               <h3 className="section-title">Leave A Comment</h3>
               <div className="comment-form-container">
@@ -262,7 +241,6 @@ const InnerBlog = () => {
               </div>
             </Col>
 
-            {/* Posted Comments */}
             <Col lg={6} className="comment-column">
               <h3 className="section-title">Comments</h3>
               <div className="comments-container">
@@ -284,8 +262,7 @@ const InnerBlog = () => {
                           ></div>
                           <div className="comment-author">
                             <h5>{comment.name}</h5>
-                            <span className="comment-date">{comment.date}</span>
-                            {/* यहाँ contact और email नहीं दिखाएंगे */}
+                            <span className="comment-date">{formatDate(comment.date)}</span>
                           </div>
                         </div>
                         <p className="comment-text">{comment.text}</p>

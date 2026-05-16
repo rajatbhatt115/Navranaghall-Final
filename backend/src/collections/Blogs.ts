@@ -6,7 +6,7 @@ const Blogs: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -28,28 +28,46 @@ const Blogs: CollectionConfig = {
       name: 'date',
       type: 'date',
       required: true,
+      admin: {
+        date: {
+          pickerAppearance: 'dayOnly',
+          displayFormat: 'dd MMM yyyy',
+        },
+      },
     },
     {
       name: 'authorImage',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Author Image',
     },
     {
       name: 'image',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Blog Image',
     },
     {
       name: 'excerpt',
       type: 'textarea',
+      label: 'Short Summary (Excerpt)',
     },
     {
       name: 'isMainBlog',
       type: 'checkbox',
+      label: 'Show on Home Page',
       defaultValue: false,
+      admin: {
+        description: 'Check this box to show this blog on the home page as main blog',
+      },
     },
     {
       name: 'pageNumber',
       type: 'number',
       defaultValue: 1,
+      admin: {
+        condition: (data, siblingData) => !siblingData?.isMainBlog,
+      },
     },
     {
       name: 'blogType',
@@ -59,6 +77,9 @@ const Blogs: CollectionConfig = {
         { label: 'Small', value: 'small' },
       ],
       defaultValue: 'small',
+      admin: {
+        condition: (data, siblingData) => !siblingData?.isMainBlog,
+      },
     },
     {
       name: 'comments',
@@ -67,7 +88,11 @@ const Blogs: CollectionConfig = {
         { name: 'name', type: 'text', required: true },
         { name: 'text', type: 'textarea', required: true },
         { name: 'avatar', type: 'text' },
-        { name: 'date', type: 'date' },
+        { 
+          name: 'date', 
+          type: 'date',
+          defaultValue: () => new Date().toISOString(),
+        },
       ],
     },
   ],

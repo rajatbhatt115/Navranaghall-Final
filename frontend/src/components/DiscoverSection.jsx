@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Container, Row, Col } from 'react-bootstrap';
 import api from '../api';
 
 const DiscoverSection = () => {
@@ -11,12 +10,6 @@ const DiscoverSection = () => {
     const fetchProducts = async () => {
       try {
         const response = await api.getDiscoverProducts();
-        console.log('===== DISCOVER PRODUCTS DEBUG =====');
-        console.log('Full response:', response);
-        console.log('response.data:', response.data);
-        console.log('Is array?', Array.isArray(response.data));
-        console.log('Length:', response.data?.length);
-        console.log('===================================');
         setProducts(response.data || []);
       } catch (error) {
         console.error('Error fetching discover products:', error);
@@ -34,7 +27,7 @@ const DiscoverSection = () => {
       <section className="discover-section">
         <Container>
           <h2><span>Discover more.</span> <strong>Good things are waiting for you</strong></h2>
-          <div>Loading...</div>
+          <div className="text-center py-5">Loading...</div>
         </Container>
       </section>
     );
@@ -46,7 +39,7 @@ const DiscoverSection = () => {
         <Container>
           <h2><span>Discover more.</span> <strong>Good things are waiting for you</strong></h2>
           <div className="text-center py-5">
-            <p>No products found. Products count: {products.length}</p>
+            <p>No products found.</p>
           </div>
         </Container>
       </section>

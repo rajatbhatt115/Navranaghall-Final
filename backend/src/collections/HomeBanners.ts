@@ -6,7 +6,7 @@ const HomeBanners: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -48,7 +48,8 @@ const HomeBanners: CollectionConfig = {
     },
     {
       name: 'imageUrl',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
       required: true,
     },
   ],

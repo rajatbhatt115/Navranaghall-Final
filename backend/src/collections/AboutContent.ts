@@ -6,7 +6,7 @@ const AboutContent: CollectionConfig = {
     useAsTitle: 'experienceTitle',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -26,7 +26,7 @@ const AboutContent: CollectionConfig = {
       fields: [
         { name: 'name', type: 'text', required: true },
         { name: 'role', type: 'text', required: true },
-        { name: 'image', type: 'text', required: true },
+        { name: 'image', type: 'upload', relationTo: 'media', required: true },
       ],
     },
     {

@@ -1,4 +1,3 @@
-// HeroSection.js - Updated with skeleton/placeholder
 import { useState, useEffect } from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
@@ -14,7 +13,6 @@ const HeroSection = ({ pageName, isShopPage }) => {
         const response = await api.getHomeBanner(pageName)
         const banner = response.data || {}
         
-        // Image URL fix karein
         if (banner && banner.imageUrl) {
           if (banner.imageUrl.startsWith('img/')) {
             banner.imageUrl = '/' + banner.imageUrl
@@ -27,7 +25,6 @@ const HeroSection = ({ pageName, isShopPage }) => {
         setBannerData(banner)
       } catch (error) {
         console.error('Error fetching banner data:', error)
-        // Fallback data
         const fallbackData = {
           title: pageName === 'home' ? 'New Collection' : 
                  pageName === 'about' ? 'About Us' :
@@ -40,12 +37,9 @@ const HeroSection = ({ pageName, isShopPage }) => {
                  pageName === 'product' ? 'Product Details' : pageName,
           
           subtitle: pageName === 'home' ? 'FIND WHAT BEST OPTIONS FOR YOU' : '',
-          
-          description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-          
+          description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
           buttonText: pageName !== 'shop' ? 'Shop Now' : '',
           buttonLink: pageName !== 'shop' ? '/shop' : '',
-          
           imageUrl: '/img/img_banner_shop.webp'
         }
         setBannerData(fallbackData)
@@ -59,7 +53,6 @@ const HeroSection = ({ pageName, isShopPage }) => {
     }
   }, [pageName])
 
-  // Loading state - SHOW SKELETON (same height as actual content)
   if (loading) {
     return (
       <section className="hero-section hero-section-skeleton">
@@ -115,7 +108,6 @@ const HeroSection = ({ pageName, isShopPage }) => {
                 className="my-img img-fluid" 
                 alt="Hero Banner" 
                 onError={(e) => {
-                  console.error('Image failed to load:', bannerData.imageUrl)
                   e.target.src = '/img/img_banner_shop.webp'
                 }}
               />

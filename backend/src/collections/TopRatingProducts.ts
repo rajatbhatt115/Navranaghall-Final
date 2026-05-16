@@ -6,7 +6,7 @@ const TopRatingProducts: CollectionConfig = {
     useAsTitle: 'category',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -26,7 +26,12 @@ const TopRatingProducts: CollectionConfig = {
         { name: 'title', type: 'text', required: true },
         { name: 'price', type: 'text', required: true },
         { name: 'rating', type: 'number', required: true },
-        { name: 'image', type: 'text', required: true },
+        { 
+          name: 'image', 
+          type: 'upload', 
+          relationTo: 'media',
+          required: true,
+        },
       ],
     },
   ],

@@ -6,7 +6,7 @@ const Products: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -42,7 +42,9 @@ const Products: CollectionConfig = {
     },
     {
       name: 'image',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Product Image',
     },
     {
       name: 'isNew',
@@ -69,6 +71,7 @@ const Products: CollectionConfig = {
         { name: 'rating', type: 'number', required: true },
         { name: 'text', type: 'textarea', required: true },
         { name: 'avatar', type: 'text' },
+        { name: 'date', type: 'date' },
       ],
     },
   ],

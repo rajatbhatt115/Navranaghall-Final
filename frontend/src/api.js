@@ -3,25 +3,29 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_LOCAL || 'http://localhost:5000/api';
 
 const api = {
-  // Helper to get auth token
-  getAuthToken: () => {
-    return localStorage.getItem('token');
+
+  getAuthToken: () => localStorage.getItem('payload-token'),
+  
+  getUserId: () => {
+
+    const user = localStorage.getItem('user')
+
+    if (!user) return null
+
+    const parsedUser = JSON.parse(user)
+
+    return parsedUser.id || parsedUser._id
   },
   
-  // Helper to get user ID
-  getUserId: () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      return JSON.parse(user).id;
-    }
-    return null;
+  isAuthenticated: () => {
+    return !!localStorage.getItem('payload-token')
   },
   
   // Auth endpoints
   register: async (userData) => {
-    const response = await axios.post(`${API_BASE_URL}/users`, userData);
+    const response = await axios.post(`${API_BASE_URL}/users/register`, userData);
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('payload-token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response;
@@ -30,21 +34,20 @@ const api = {
   login: async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/users/login`, credentials);
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('payload-token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response;
   },
   
   logout: () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('payload-token');
     localStorage.removeItem('user');
   },
   
   getCurrentUser: async () => {
     const token = api.getAuthToken();
     if (!token) return null;
-    
     try {
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -60,33 +63,45 @@ const api = {
   verifyOTP: (email, otp) => axios.post(`${API_BASE_URL}/auth/verify-otp`, { email, otp }),
   resetPassword: (email, otp, newPassword) => axios.post(`${API_BASE_URL}/auth/reset-password`, { email, otp, newPassword }),
   
-  // ==================== COMMON ====================
-  getHomeBanner: (pageName) => axios.get(`${API_BASE_URL}/homeBanners?where[pageName][equals]=${pageName}`).then(res => ({ data: res.data.docs[0] })),
-  
-  // ==================== HOME PAGE COMPONENTS ====================
-  getDiscoverProducts: () => axios.get(`${API_BASE_URL}/discoverProducts`).then(res => ({ data: res.data.docs })),
-  getCategories: () => axios.get(`${API_BASE_URL}/categories`).then(res => ({ data: res.data.docs })),
+  // ==================== PUBLIC ROUTES ====================
+  getHomeBanner: (pageName) => axios.get(`${API_BASE_URL}/homeBanners/page/${pageName}`),
+  getDiscoverProducts: () => axios.get(`${API_BASE_URL}/discoverProducts`).then(res => ({ data: res.data.docs || [] })),
+  getCategories: () => axios.get(`${API_BASE_URL}/categories`).then(res => ({ data: res.data.docs || [] })),
   getTopRatingProducts: async (category) => {
-    const response = await axios.get(`${API_BASE_URL}/topRatingProducts?where[category][equals]=${category}`);
-    const item = response.data.docs[0];
-    return { data: item ? item.products : [] };
+    try {
+      const response = await axios.get(`${API_BASE_URL}/topRatingProducts?category=${category}`);
+      // Handle both formats: direct array or { docs: [...] }
+      if (response.data.docs && response.data.docs[0]?.products) {
+        return { data: response.data.docs[0].products };
+      }
+      return { data: response.data || [] };
+    } catch (error) {
+      console.error('Error fetching top rating products:', error);
+      return { data: [] };
+    }
   },
-  getTestimonials: () => axios.get(`${API_BASE_URL}/testimonials`).then(res => ({ data: res.data.docs })),
-  getBlogHome: () => axios.get(`${API_BASE_URL}/blogs?where[isMainBlog][equals]=true&limit=1`).then(async (res) => {
-    const mainBlog = res.data.docs[0];
-    const smallBlogs = await axios.get(`${API_BASE_URL}/blogs?where[isMainBlog][equals]=false&limit=2`);
-    return { data: { mainBlog, smallBlogs: smallBlogs.data.docs } };
-  }),
-  getAboutContent: () => axios.get(`${API_BASE_URL}/aboutContent`).then(res => ({ data: res.data.docs[0] })),
-  
-  // ==================== ABOUT PAGE ====================
-  getAboutData: () => axios.get(`${API_BASE_URL}/aboutContent`).then(res => ({ data: res.data.docs[0] })),
-  getTeam: () => axios.get(`${API_BASE_URL}/team`).then(res => ({ data: res.data.docs })),
-  
-  // ==================== BLOG PAGE ====================
+  getTestimonials: () => axios.get(`${API_BASE_URL}/testimonials`).then(res => ({ data: res.data.docs || [] })),
+  getBlogHome: () => axios.get(`${API_BASE_URL}/blogHome`).then(res => ({ data: res.data })),
+  getAboutContent: async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/aboutContent`);
+      // Handle both formats: { docs: [...] } or direct object
+      if (response.data.docs && response.data.docs[0]) {
+        return { data: response.data.docs[0] };
+      }
+      return { data: response.data };
+    } catch (error) {
+      console.error('Error fetching about content:', error);
+      return { data: null };
+    }
+  },
+  getAboutData: () => api.getAboutContent(),
+  getTeam: () => axios.get(`${API_BASE_URL}/team`).then(res => ({ data: res.data.docs || [] })),
+  getProducts: () => axios.get(`${API_BASE_URL}/products`).then(res => ({ data: res.data.docs || [] })),
+  getProductDetails: (id) => axios.get(`${API_BASE_URL}/products/${id}`),
   getBlogPages: async () => {
     const response = await axios.get(`${API_BASE_URL}/blogs`);
-    const blogs = response.data.docs;
+    const blogs = response.data.docs || [];
     const pages = {};
     blogs.forEach(blog => {
       if (!pages[blog.pageNumber]) pages[blog.pageNumber] = { mainBlogs: [], smallBlogs: [] };
@@ -95,82 +110,90 @@ const api = {
     });
     return { data: Object.keys(pages).map(page => ({ page: parseInt(page), ...pages[page] })) };
   },
-  
-  // ==================== INNER BLOG PAGE ====================
   getInnerBlog: (id) => axios.get(`${API_BASE_URL}/blogs/${id}`),
-  
-  // ==================== BLOG COMMENTS ====================
   addBlogComment: async (blogId, commentData) => {
-    const blog = await axios.get(`${API_BASE_URL}/blogs/${blogId}`);
-    const existingComments = blog.data.comments || [];
-    const newComment = {
-      id: existingComments.length + 1,
-      ...commentData,
-      date: new Date().toISOString()
-    };
-    const updatedComments = [...existingComments, newComment];
-    return axios.patch(`${API_BASE_URL}/blogs/${blogId}`, { comments: updatedComments });
-  },
-  
-  // ==================== SHOP PAGE ====================
-  getProducts: () => axios.get(`${API_BASE_URL}/products`).then(res => ({ data: res.data.docs })),
-  searchProducts: (filters) => {
-    let query = `${API_BASE_URL}/products?`;
-    if (filters.category) query += `category[equals]=${filters.category}&`;
-    if (filters.search) query += `title[contains]=${filters.search}&`;
-    return axios.get(query).then(res => ({ data: res.data.docs }));
-  },
-  
-  // ==================== CART PAGE ====================
-  getCartItems: async () => {
-    const userId = api.getUserId();
-    if (!userId) return { data: [] };
-    const response = await axios.get(`${API_BASE_URL}/cartItems/user/${userId}`);
+    const response = await axios.post(`${API_BASE_URL}/blogs/${blogId}/comments`, commentData);
     return response;
   },
-  updateCartItem: (id, data) => axios.patch(`${API_BASE_URL}/cartItems/${id}`, data),
-  deleteCartItem: (id) => axios.delete(`${API_BASE_URL}/cartItems/${id}`),
+  
+  // ==================== PROTECTED ROUTES (Require Auth) ====================
+  getCartItems: async () => {
+    const userId = api.getUserId();
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.get(`${API_BASE_URL}/cartItems/user/${userId}`, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+    });
+    return response;
+  },
   addToCart: async (data) => {
     const userId = api.getUserId();
-    if (!userId) throw new Error('User not logged in');
-    return axios.post(`${API_BASE_URL}/cartItems`, { ...data, user: userId });
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.post(`${API_BASE_URL}/cartItems`, data, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+    });
+    return response;
   },
+  updateCartItem: (id, data) => axios.patch(`${API_BASE_URL}/cartItems/${id}`, data, {
+    headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+  }),
+  deleteCartItem: (id) => axios.delete(`${API_BASE_URL}/cartItems/${id}`, {
+    headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+  }),
   
-  // ==================== WISHLIST PAGE ====================
   getWishlistItems: async () => {
     const userId = api.getUserId();
-    if (!userId) return { data: [] };
-    const response = await axios.get(`${API_BASE_URL}/wishlistItems/user/${userId}`);
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.get(`${API_BASE_URL}/wishlistItems/user/${userId}`, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+    });
     return response;
   },
   addToWishlist: async (data) => {
     const userId = api.getUserId();
-    if (!userId) throw new Error('User not logged in');
-    return axios.post(`${API_BASE_URL}/wishlistItems`, { ...data, user: userId });
-  },
-  updateWishlistItem: (id, data) => axios.patch(`${API_BASE_URL}/wishlistItems/${id}`, data),
-  deleteWishlistItem: (id) => axios.delete(`${API_BASE_URL}/wishlistItems/${id}`),
-  
-  // ==================== PRODUCT DETAILS ====================
-  getProductDetails: (id) => axios.get(`${API_BASE_URL}/products/${id}`),
-  
-  // ==================== REVIEWS ====================
-  addProductReview: async (reviewData) => {
-    const product = await axios.get(`${API_BASE_URL}/products/${reviewData.productId}`);
-    const existingReviews = product.data.reviews || [];
-    const newReview = {
-      id: existingReviews.length + 1,
-      name: reviewData.name,
-      rating: reviewData.rating,
-      text: reviewData.comment,
-      avatar: reviewData.avatar
-    };
-    const updatedReviews = [...existingReviews, newReview];
-    const newRating = (updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length).toFixed(1);
-    return axios.patch(`${API_BASE_URL}/products/${reviewData.productId}`, {
-      reviews: updatedReviews,
-      rating: parseFloat(newRating)
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.post(`${API_BASE_URL}/wishlistItems`, data, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
     });
+    return response;
+  },
+  // ✅ ADD THIS
+updateWishlistItem: (id, data) => axios.patch(
+  `${API_BASE_URL}/wishlistItems/${id}`,
+  data,
+  {
+    headers: {
+      Authorization: `Bearer ${api.getAuthToken()}`
+    }
+  }
+),
+
+deleteWishlistItem: (id) => axios.delete(`${API_BASE_URL}/wishlistItems/${id}`, {
+  headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+}),
+  deleteWishlistItem: (id) => axios.delete(`${API_BASE_URL}/wishlistItems/${id}`, {
+    headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+  }),
+  
+  createOrder: async (data) => {
+    const userId = api.getUserId();
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.post(`${API_BASE_URL}/orders`, data, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+    });
+    return response;
+  },
+  getOrders: async () => {
+    const userId = api.getUserId();
+    if (!userId) throw new Error('Please login first');
+    const response = await axios.get(`${API_BASE_URL}/orders/user/${userId}`, {
+      headers: { Authorization: `Bearer ${api.getAuthToken()}` }
+    });
+    return response;
+  },
+  
+  addProductReview: async (reviewData) => {
+    const response = await axios.post(`${API_BASE_URL}/productReviews`, reviewData);
+    return response;
   },
 };
 

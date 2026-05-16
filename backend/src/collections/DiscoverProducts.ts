@@ -6,7 +6,7 @@ const DiscoverProducts: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    read: () => true,  // Allow public read access
+    read: () => true,
   },
   fields: [
     {
@@ -26,7 +26,8 @@ const DiscoverProducts: CollectionConfig = {
     },
     {
       name: 'image',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
       required: true,
     },
   ],

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
-import { FaRupeeSign, FaThLarge, FaRuler, FaSort, FaHeart, FaShoppingCart, FaStar, FaStarHalfAlt,  FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaRupeeSign, FaThLarge, FaRuler, FaSort, FaHeart, FaShoppingCart, FaStar, FaStarHalfAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import api from '../api';
 
 const Shop = () => {
@@ -29,14 +29,23 @@ const Shop = () => {
         setProducts(productsResponse.data);
         setFilteredProducts(productsResponse.data);
         
-        // Fetch wishlist items
-        const wishlistResponse = await api.getWishlistItems();
-        setWishlistItems(wishlistResponse.data);
-        
-        // Fetch cart items
-        const cartResponse = await api.getCartItems();
-        setCartItems(cartResponse.data);
-        
+        // Fetch wishlist items only if logged in
+        const token = localStorage.getItem('payload-token');  // ✅ Changed
+        if (token) {
+          try {
+            const wishlistResponse = await api.getWishlistItems();
+            setWishlistItems(wishlistResponse.data);
+          } catch (err) {
+            console.log('Wishlist fetch skipped - login required');
+          }
+          
+          try {
+            const cartResponse = await api.getCartItems();
+            setCartItems(cartResponse.data);
+          } catch (err) {
+            console.log('Cart fetch skipped - login required');
+          }
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -70,7 +79,7 @@ const Shop = () => {
       return newFilters
     })
     setCurrentPage(1)
-     setShowMenu('') // ✅ IMPORTANT: menu close
+    setShowMenu('')
   };
 
   const filterProducts = () => {
@@ -98,11 +107,13 @@ const Shop = () => {
       )
     }
 
-    // Size filter
+    // Size filter - FIXED
     if (filters.size.length > 0) {
-      filtered = filtered.filter(product =>
-        product.sizes.some(size => filters.size.includes(size))
-      )
+      filtered = filtered.filter(product => {
+        if (!product.sizes || product.sizes.length === 0) return false;
+        const productSizes = product.sizes.map(s => typeof s === 'object' ? s.size : s);
+        return productSizes.some(size => filters.size.includes(size));
+      })
     }
 
     // Sort products
@@ -154,73 +165,64 @@ const Shop = () => {
     return stars
   };
 
-  // Helper function to get random color
   const getRandomColor = () => {
     const colors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Orange', 'Pink', 'Purple', 'Yellow'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // Add to Wishlist Function
+  // Get size string from size object
+  const getSizeString = (size) => {
+    return typeof size === 'object' ? size.size : size;
+  };
+
   const addToWishlist = async (product, e) => {
     e.preventDefault();
     e.stopPropagation();
     
+    const token = localStorage.getItem('payload-token');  // ✅ Changed
+    if (!token) {
+      alert('Please login first to add items to wishlist!');
+      return;
+    }
+    
     try {
-      // Check if already in wishlist
       const isAlreadyInWishlist = wishlistItems.some(item => item.name === product.title);
       
       if (!isAlreadyInWishlist) {
-        // Prepare wishlist item data
+        const firstSize = product.sizes && product.sizes.length > 0 ? getSizeString(product.sizes[0]) : 'M';
+        
         const wishlistItem = {
           name: product.title,
-          image: product.image,
+          image: typeof product.image === 'object' ? product.image.url : product.image,
           color: getRandomColor(),
-          size: product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M',
+          size: firstSize,
           unitPrice: product.price,
           price: product.price,
           quantity: 1,
           inStock: true
         };
         
-        console.log('Adding to wishlist:', wishlistItem);
-        
-        // Add to wishlist via API
         const response = await api.addToWishlist(wishlistItem);
-        console.log('API Response:', response);
-        
-        // Update local state
         setWishlistItems(prev => [...prev, response.data]);
-        
-        // Show success message
         alert(`✓ "${product.title}" has been added to your wishlist!`);
-        
       } else {
         alert(`"${product.title}" is already in your wishlist!`);
       }
     } catch (error) {
       console.error('Error adding to wishlist:', error);
-      console.error('Error details:', error.response?.data || error.message);
       alert(`Failed to add "${product.title}" to wishlist. Please try again.`);
     }
   };
 
-  // Remove from Wishlist Function
   const removeFromWishlist = async (product, e) => {
     e.preventDefault();
     e.stopPropagation();
     
     try {
-      // Find the wishlist item by name
       const wishlistItem = wishlistItems.find(item => item.name === product.title);
-      
       if (wishlistItem) {
-        // Remove from wishlist via API
         await api.deleteWishlistItem(wishlistItem.id);
-        
-        // Update local state
         setWishlistItems(prev => prev.filter(item => item.id !== wishlistItem.id));
-        
-        // Show success message
         alert(`✓ "${product.title}" has been removed from your wishlist!`);
       }
     } catch (error) {
@@ -229,66 +231,55 @@ const Shop = () => {
     }
   };
 
-  // Add to Cart Function
   const addToCart = async (product, e) => {
     e.preventDefault();
     e.stopPropagation();
     
+    const token = localStorage.getItem('payload-token');  // ✅ Changed
+    if (!token) {
+      alert('Please login first to add items to cart!');
+      return;
+    }
+    
+    
+    
     try {
-      // Check if already in cart
       const isAlreadyInCart = cartItems.some(item => item.name === product.title);
       
       if (!isAlreadyInCart) {
-        // Prepare cart item data
+        const firstSize = product.sizes && product.sizes.length > 0 ? getSizeString(product.sizes[0]) : 'M';
+        
         const cartItem = {
           name: product.title,
-          image: product.image,
+          image: typeof product.image === 'object' ? product.image.url : product.image,
           color: getRandomColor(),
-          size: product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M',
+          size: firstSize,
           price: product.price,
           quantity: 1,
-          inStock: true
+          inStock: true,
         };
         
-        console.log('Adding to cart:', cartItem);
-        
-        // Add to cart via API
         const response = await api.addToCart(cartItem);
-        console.log('API Response:', response);
-        
-        // Update local state
         setCartItems(prev => [...prev, response.data]);
-        
-        // Show success message
         alert(`✓ "${product.title}" has been added to your cart!`);
-        
       } else {
         alert(`"${product.title}" is already in your cart!`);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      console.error('Error details:', error.response?.data || error.message);
       alert(`Failed to add "${product.title}" to cart. Please try again.`);
     }
   };
 
-  // Remove from Cart Function
   const removeFromCart = async (product, e) => {
     e.preventDefault();
     e.stopPropagation();
     
     try {
-      // Find the cart item by name
       const cartItem = cartItems.find(item => item.name === product.title);
-      
       if (cartItem) {
-        // Remove from cart via API
         await api.deleteCartItem(cartItem.id);
-        
-        // Update local state
         setCartItems(prev => prev.filter(item => item.id !== cartItem.id));
-        
-        // Show success message
         alert(`✓ "${product.title}" has been removed from your cart!`);
       }
     } catch (error) {
@@ -297,12 +288,10 @@ const Shop = () => {
     }
   };
 
-  // Check if product is in wishlist
   const isInWishlist = (product) => {
     return wishlistItems.some(item => item.name === product.title);
   };
 
-  // Check if product is in cart
   const isInCart = (product) => {
     return cartItems.some(item => item.name === product.title);
   };
@@ -320,14 +309,12 @@ const Shop = () => {
     <>
       <HeroSection pageName="shop" isShopPage={true} />
 
-      {/* Products Filter & Display Section */}
       <section className="filter-section">
         <Container>
           <h2 className="section-title">Featured Products</h2>
           <p className="section-subtitle">Browse and filter our exclusive collection</p>
           
           <div className="filter-container">
-            {/* Price Filter */}
             <div className="filter-dropdown price-filter">
               <button className="filter-btn" onClick={() => toggleMenu('price')}>
                 <span><FaRupeeSign /> Price</span>
@@ -337,12 +324,7 @@ const Shop = () => {
                 <div className="filter-menu show">
                   {['under-1000', '1000-2000', '2000-3000', 'above-3000'].map(option => (
                     <div className="filter-option" key={option}>
-                      <input
-                        type="checkbox"
-                        id={option}
-                        checked={filters.price.includes(option)}
-                        onChange={() => handleFilterChange('price', option)}
-                      />
+                      <input type="checkbox" id={option} checked={filters.price.includes(option)} onChange={() => handleFilterChange('price', option)} />
                       <label htmlFor={option}>
                         {option === 'under-1000' ? 'Under ₹1000' :
                          option === '1000-2000' ? '₹1000 - ₹2000' :
@@ -354,7 +336,6 @@ const Shop = () => {
               )}
             </div>
 
-            {/* Categories Filter */}
             <div className="filter-dropdown">
               <button className="filter-btn" onClick={() => toggleMenu('category')}>
                 <span><FaThLarge /> Categories</span>
@@ -364,12 +345,7 @@ const Shop = () => {
                 <div className="filter-menu show">
                   {['Female', 'Kids', 'Male', 'Jewellery'].map(category => (
                     <div className="filter-option" key={category}>
-                      <input
-                        type="checkbox"
-                        id={`cat-${category}`}
-                        checked={filters.category.includes(category)}
-                        onChange={() => handleFilterChange('category', category)}
-                      />
+                      <input type="checkbox" id={`cat-${category}`} checked={filters.category.includes(category)} onChange={() => handleFilterChange('category', category)} />
                       <label htmlFor={`cat-${category}`}>{category}</label>
                     </div>
                   ))}
@@ -377,7 +353,6 @@ const Shop = () => {
               )}
             </div>
 
-            {/* Sizes Filter */}
             <div className="filter-dropdown">
               <button className="filter-btn" onClick={() => toggleMenu('size')}>
                 <span><FaRuler /> Sizes</span>
@@ -387,12 +362,7 @@ const Shop = () => {
                 <div className="filter-menu show">
                   {['S', 'M', 'L', 'XL'].map(size => (
                     <div className="filter-option" key={size}>
-                      <input
-                        type="checkbox"
-                        id={`size-${size}`}
-                        checked={filters.size.includes(size)}
-                        onChange={() => handleFilterChange('size', size)}
-                      />
+                      <input type="checkbox" id={`size-${size}`} checked={filters.size.includes(size)} onChange={() => handleFilterChange('size', size)} />
                       <label htmlFor={`size-${size}`}>{size}</label>
                     </div>
                   ))}
@@ -400,7 +370,6 @@ const Shop = () => {
               )}
             </div>
 
-            {/* Sort Order Filter */}
             <div className="filter-dropdown">
               <button className="filter-btn" onClick={() => toggleMenu('sort')}>
                 <span><FaSort /> Sort Order</span>
@@ -415,13 +384,7 @@ const Shop = () => {
                     { value: 'newest', label: 'Newest First' }
                   ].map(sortOption => (
                     <div className="filter-option" key={sortOption.value}>
-                      <input
-                        type="radio"
-                        name="sort"
-                        id={`sort-${sortOption.value}`}
-                        checked={filters.sort === sortOption.value}
-                        onChange={() => handleFilterChange('sort', sortOption.value)}
-                      />
+                      <input type="radio" name="sort" id={`sort-${sortOption.value}`} checked={filters.sort === sortOption.value} onChange={() => handleFilterChange('sort', sortOption.value)} />
                       <label htmlFor={`sort-${sortOption.value}`}>{sortOption.label}</label>
                     </div>
                   ))}
@@ -430,40 +393,29 @@ const Shop = () => {
             </div>
           </div>
           
-          {/* Active Filters Display */}
           {(filters.price.length > 0 || filters.category.length > 0 || filters.size.length > 0) && (
             <div className="filter-status active" id="filterStatus">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <small className="text-muted">Active Filters:</small>
-                <button className="btn btn-sm btn-link text-danger p-0" onClick={clearAllFilters}>
-                  Clear All
-                </button>
+                <button className="btn btn-sm btn-link text-danger p-0" onClick={clearAllFilters}>Clear All</button>
               </div>
               <div className="active-filters" id="activeFilters">
                 {filters.price.map(filter => (
                   <div className="active-filter" key={`price-${filter}`}>
-                    {filter === 'under-1000' ? 'Under ₹1000' :
-                     filter === '1000-2000' ? '₹1000 - ₹2000' :
-                     filter === '2000-3000' ? '₹2000 - ₹3000' : 'Above ₹3000'}
-                    <span className="remove-filter" onClick={() => removeFilter('price', filter)}>
-                      &times;
-                    </span>
+                    {filter === 'under-1000' ? 'Under ₹1000' : filter === '1000-2000' ? '₹1000 - ₹2000' : filter === '2000-3000' ? '₹2000 - ₹3000' : 'Above ₹3000'}
+                    <span className="remove-filter" onClick={() => removeFilter('price', filter)}>&times;</span>
                   </div>
                 ))}
                 {filters.category.map(category => (
                   <div className="active-filter" key={`category-${category}`}>
                     {category}
-                    <span className="remove-filter" onClick={() => removeFilter('category', category)}>
-                      &times;
-                    </span>
+                    <span className="remove-filter" onClick={() => removeFilter('category', category)}>&times;</span>
                   </div>
                 ))}
                 {filters.size.map(size => (
                   <div className="active-filter" key={`size-${size}`}>
                     {size}
-                    <span className="remove-filter" onClick={() => removeFilter('size', size)}>
-                      &times;
-                    </span>
+                    <span className="remove-filter" onClick={() => removeFilter('size', size)}>&times;</span>
                   </div>
                 ))}
               </div>
@@ -472,7 +424,6 @@ const Shop = () => {
         </Container>
       </section>
 
-      {/* Products Display Section */}
       <section className="products-section">
         <Container>
           {currentProducts.length > 0 ? (
@@ -482,51 +433,25 @@ const Shop = () => {
                   const inWishlist = isInWishlist(product);
                   const inCart = isInCart(product);
                   
+                  const imageUrl = typeof product.image === 'object' ? product.image.url : product.image;
+                  
                   return (
                     <Col lg={4} md={6} key={product.id}>
                       <Link to={`/product/${product.id}`} className="product-link">
                         <div className="product-card">
-                          <div 
-                            className="product-image" 
-                            style={{ backgroundImage: `url(${product.image})` }}
-                            loading="lazy"
-                          >
-                            {product.isNew && (
-                              <div className="badge-new">NEW</div>
-                            )}
+                          <div className="product-image" style={{ backgroundImage: `url(${imageUrl})` }} loading="lazy">
+                            {product.isNew && <div className="badge-new">NEW</div>}
                             <div className="product-actions">
-                              <button 
-                                className="action-btn-shop" 
-                                onClick={(e) => {
-                                  if (inWishlist) {
-                                    removeFromWishlist(product, e);
-                                  } else {
-                                    addToWishlist(product, e);
-                                  }
-                                }}
-                                style={{ 
-                                  color: inWishlist ? '#FF7E00' : 'inherit',
-                                  background: inWishlist ? 'rgba(255, 255, 255, 0.1)' : 'inherit'
-                                }}
-                                title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                              >
+                              <button className="action-btn-shop" onClick={(e) => {
+                                if (inWishlist) removeFromWishlist(product, e);
+                                else addToWishlist(product, e);
+                              }} style={{ color: inWishlist ? '#FF7E00' : 'inherit' }} title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}>
                                 <FaHeart />
                               </button>
-                              <button 
-                                className="action-btn-shop" 
-                                onClick={(e) => {
-                                  if (inCart) {
-                                    removeFromCart(product, e);
-                                  } else {
-                                    addToCart(product, e);
-                                  }
-                                }}
-                                style={{ 
-                                  color: inCart ? '#FF7E00' : 'inherit',
-                                  background: inCart ? 'rgba(255, 126, 0, 0.1)' : 'inherit'
-                                }}
-                                title={inCart ? 'Remove from Cart' : 'Add to Cart'}
-                              >
+                              <button className="action-btn-shop" onClick={(e) => {
+                                if (inCart) removeFromCart(product, e);
+                                else addToCart(product, e);
+                              }} style={{ color: inCart ? '#FF7E00' : 'inherit' }} title={inCart ? 'Remove from Cart' : 'Add to Cart'}>
                                 <FaShoppingCart />
                               </button>
                             </div>
@@ -534,8 +459,8 @@ const Shop = () => {
                           <div className="product-info">
                             <h3 className="product-title">{product.title}</h3>
                             <div className="size-options">
-                              {product.sizes.map(size => (
-                                <span className="size-option" key={size}>{size}</span>
+                              {product.sizes && product.sizes.map((size, idx) => (
+                                <span className="size-option" key={idx}>{typeof size === 'object' ? size.size : size}</span>
                               ))}
                             </div>
                             <div className="product-footer">
@@ -544,9 +469,7 @@ const Shop = () => {
                               </div>
                               <div className="product-rating" style={{marginBottom: '5px'}}>
                                 <span className="rating-value" style={{marginTop: '5px'}}>{product.rating}</span>
-                                <div className="stars">
-                                  {renderStars(product.rating)}
-                                </div>
+                                <div className="stars">{renderStars(product.rating)}</div>
                               </div>
                             </div>
                           </div>
@@ -557,15 +480,10 @@ const Shop = () => {
                 })}
               </Row>
               
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="products-pagination" id="productsPagination">
                   {[...Array(totalPages)].map((_, index) => (
-                    <div
-                      key={index}
-                      className={`page-number ${currentPage === index + 1 ? 'active' : ''}`}
-                      onClick={() => setCurrentPage(index + 1)}
-                    >
+                    <div key={index} className={`page-number ${currentPage === index + 1 ? 'active' : ''}`} onClick={() => setCurrentPage(index + 1)}>
                       {index + 1}
                     </div>
                   ))}
@@ -577,9 +495,7 @@ const Shop = () => {
               <i className="fas fa-search fa-3x text-muted mb-3"></i>
               <h4>No products found</h4>
               <p className="text-muted">Try adjusting your filters to find what you're looking for.</p>
-              <button className="btn-read-more mt-3" onClick={clearAllFilters}>
-                Clear All Filters
-              </button>
+              <button className="btn-read-more mt-3" onClick={clearAllFilters}>Clear All Filters</button>
             </div>
           )}
         </Container>

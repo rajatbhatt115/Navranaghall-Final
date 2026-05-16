@@ -124,7 +124,7 @@ const Cart = () => {
       return
     }
 
-    const { total } = calculateTotals()
+    const { subtotal, shipping, tax, total } = calculateTotals()
     const productNames = cartItems.map(item => item.name).join(', ')
 
     const options = {

@@ -5,16 +5,13 @@ const Users: CollectionConfig = {
   auth: true,
   admin: {
     useAsTitle: 'email',
+    defaultColumns: ['email', 'name', 'createdAt'],
   },
   fields: [
     {
       name: 'name',
       type: 'text',
       required: true,
-    },
-    {
-      name: 'profileImage',
-      type: 'text',
     },
   ],
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import api from '../api';
 
@@ -26,15 +26,10 @@ const AboutSection = () => {
     return null;
   }
 
-  if (!aboutContent) {
-    return null;
-  }
-
   return (
     <section className="about-section">
       <Container>
         <Row className="align-items-center about-mob">
-          {/* LEFT IMAGE */}
           <Col lg={6}>
             <div className="position-relative">
               <img 
@@ -48,7 +43,6 @@ const AboutSection = () => {
             </div>
           </Col>
 
-          {/* RIGHT CONTENT */}
           <Col lg={6}>
             <div className="about-box">
               <h2>About Us.</h2>
