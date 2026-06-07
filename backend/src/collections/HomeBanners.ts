@@ -1,7 +1,7 @@
 import { CollectionConfig } from 'payload/types';
 
 const HomeBanners: CollectionConfig = {
-  slug: 'homeBanners',
+  slug: 'home-banners',
   admin: {
     useAsTitle: 'title',
   },
@@ -22,6 +22,7 @@ const HomeBanners: CollectionConfig = {
         { label: 'Cart', value: 'cart' },
         { label: 'Wishlist', value: 'wishlist' },
         { label: 'Product', value: 'product' },
+        { label: 'Account', value: 'account' },
       ],
     },
     {

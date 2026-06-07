@@ -18,7 +18,25 @@ const RatingSection = () => {
     setLoading(true)
     try {
       const response = await api.getTopRatingProducts(activeCategory)
-      setProducts(response.data || [])
+      let productsData = response.data || []
+      
+      // ✅ Transform products to handle image URLs
+      productsData = productsData.map(product => {
+        // Handle products array inside each category document
+        if (product.products && Array.isArray(product.products)) {
+          return product.products.map(p => ({
+            ...p,
+            imageUrl: p.image?.url || p.image,
+            price: p.price,
+            rating: p.rating,
+            title: p.title,
+            id: p.id
+          }))
+        }
+        return product
+      }).flat() // Flatten the array
+        
+      setProducts(productsData)
     } catch (error) {
       console.error('Error fetching products:', error)
       setProducts([])
@@ -42,7 +60,7 @@ const RatingSection = () => {
     const totalPrice = parseInt(product.price.replace('₹', '').replace(',', '')) || 1000
 
     const options = {
-      key: "rzp_test_1DP5mmOlF5G5ag",
+      key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: totalPrice * 100,
       currency: "INR",
       name: "Navrang Hall",
@@ -112,7 +130,8 @@ const RatingSection = () => {
               {products.map(product => (
                 <Col md={4} key={product.id}>
                   <div className="rating-card">
-                    <div className="rating-image" style={{ backgroundImage: `url(${product.image})` }}></div>
+                    {/* ✅ Fixed: Use imageUrl instead of image */}
+                    <div className="rating-image" style={{ backgroundImage: `url(${product.imageUrl})` }}></div>
                     <div className="rating-top-row">
                       <div className="left-group">
                         <h5 className="item-title">{product.title}</h5>

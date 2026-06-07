@@ -12,8 +12,7 @@
     "resolveJsonModule": true,
     "jsx": "react",
     "allowJs": true,
-    "noImplicitAny": false,
-    "ignoreDeprecations": "5.0"
+    "noImplicitAny": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

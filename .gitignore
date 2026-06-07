@@ -1,50 +1,77 @@
-# Node modules (root, frontend, backend)
-node_modules
-**/node_modules
-
-# Logs
-logs
-*.log
+# ====================
+# DEPENDENCIES
+# ====================
+node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Build outputs
-dist
-dist-ssr
-build
-**/dist
-**/build
+# ====================
+# BUILD OUTPUTS
+# ====================
+dist/
+dist-ssr/
+build/
+**/dist/
+**/build/
+*.tsbuildinfo
 
-# ========== SECURITY - Sensitive files ==========
-# Environment files (CRITICAL - never commit)
+# ====================
+# ENVIRONMENT FILES (CRITICAL - NEVER COMMIT)
+# ====================
 .env
 .env.*
+!.env.example
+!.env.test.example
 *.local
 **/.env
 **/.env.*
+**/!.env.example
 
-# Payload config files with credentials
+# ====================
+# PAYLOAD CMS CONFIG (CRITICAL - NEVER COMMIT)
+# ====================
 **/payload.config.ts
 **/payload.config.js
-**/*.config.ts
-!**/*.config.example.ts
+**/payload.config.json
+!**/payload.config.example.ts
+!**/payload.config.example.js
 
-# Data files (db.json contains data but not credentials - optional)
+# ====================
+# SECRETS & KEYS (CRITICAL - NEVER COMMIT)
+# ====================
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+secrets/
+**/secrets/
+.ssl/
+**/.ssl/
+
+# ====================
+# DATABASE FILES
+# ====================
 data/
 **/data/*.json
+*.db
+*.sqlite
+*.sqlite3
 *.db.json
 
-# IDE configs with secrets
-**/.vscode/settings.json
-**/.vscode/launch.json
-
-# ========== Editor / OS files ==========
-.vscode/*
+# ====================
+# IDE & EDITOR FILES
+# ====================
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 *.suo
 *.ntvs*
@@ -53,34 +80,85 @@ data/
 *.sw?
 Thumbs.db
 desktop.ini
+**/.vscode/settings.json
+**/.vscode/launch.json
 
-# ========== Temporary files ==========
+# ====================
+# OPERATING SYSTEM FILES
+# ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ====================
+# TEMPORARY FILES
+# ====================
 *.tmp
 *.temp
 *.cache
 **/.cache
+*.log
+logs/
+**/logs/
+*.pid
+*.seed
+*.pid.lock
 
-# ========== Package manager files ==========
+# ====================
+# PACKAGE MANAGER LOCKS (Optional - Remove if you want to commit them)
+# ====================
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
-# ========== TypeScript ==========
-*.tsbuildinfo
+# ====================
+# TESTING COVERAGE
+# ====================
+coverage/
+.nyc_output/
+**/coverage/
+*.lcov
 
-# ========== Testing ==========
-coverage
-.nyc_output
-**/coverage
-
-# ========== Debug ==========
+# ====================
+# DEBUG FILES
+# ====================
 debug.log
 **/debug.log
+*.log
 
-# ========== Secrets / Keys ==========
-*.pem
-*.key
-*.cert
-*.crt
-secrets/
-**/secrets/
+# ====================
+# MISC
+# ====================
+*.tgz
+*.gz
+*.rar
+*.7z
+.DS_Store
+.vercel
+.next/
+.nuxt/
+.output/
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# ====================
+# MEDIA UPLOADS (If you have uploaded files locally)
+# ====================
+media/
+uploads/
+**/media/
+**/uploads/
+
+# ====================
+# BACKUP FILES
+# ====================
+*.bak
+*.backup
+*.old
+*.orig

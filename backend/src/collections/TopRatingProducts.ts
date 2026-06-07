@@ -1,12 +1,17 @@
 import { CollectionConfig } from 'payload/types';
 
 const TopRatingProducts: CollectionConfig = {
-  slug: 'topRatingProducts',
+  slug: 'top-rating-products',
   admin: {
     useAsTitle: 'category',
+    defaultColumns: ['category', 'products'],
   },
   access: {
     read: () => true,
+    create: ({ req }) => true,
+    update: ({ req }) => true,
+    delete: ({ req }) => true,
+    admin: ({ req }) => true,  // ✅ ADD THIS - Admin panel access
   },
   fields: [
     {
@@ -26,12 +31,7 @@ const TopRatingProducts: CollectionConfig = {
         { name: 'title', type: 'text', required: true },
         { name: 'price', type: 'text', required: true },
         { name: 'rating', type: 'number', required: true },
-        { 
-          name: 'image', 
-          type: 'upload', 
-          relationTo: 'media',
-          required: true,
-        },
+        { name: 'image', type: 'upload', relationTo: 'media', required: true },
       ],
     },
   ],

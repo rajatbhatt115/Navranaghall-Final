@@ -30,7 +30,7 @@ const Shop = () => {
         setFilteredProducts(productsResponse.data);
         
         // Fetch wishlist items only if logged in
-        const token = localStorage.getItem('payload-token');  // ✅ Changed
+        const token = localStorage.getItem('token');
         if (token) {
           try {
             const wishlistResponse = await api.getWishlistItems();
@@ -179,8 +179,8 @@ const Shop = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const token = localStorage.getItem('payload-token');  // ✅ Changed
-    if (!token) {
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
       alert('Please login first to add items to wishlist!');
       return;
     }
@@ -192,6 +192,7 @@ const Shop = () => {
         const firstSize = product.sizes && product.sizes.length > 0 ? getSizeString(product.sizes[0]) : 'M';
         
         const wishlistItem = {
+          productId: product.id,
           name: product.title,
           image: typeof product.image === 'object' ? product.image.url : product.image,
           color: getRandomColor(),
@@ -235,8 +236,8 @@ const Shop = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const token = localStorage.getItem('payload-token');  // ✅ Changed
-    if (!token) {
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
       alert('Please login first to add items to cart!');
       return;
     }
@@ -250,6 +251,7 @@ const Shop = () => {
         const firstSize = product.sizes && product.sizes.length > 0 ? getSizeString(product.sizes[0]) : 'M';
         
         const cartItem = {
+          productId: product.id,
           name: product.title,
           image: typeof product.image === 'object' ? product.image.url : product.image,
           color: getRandomColor(),

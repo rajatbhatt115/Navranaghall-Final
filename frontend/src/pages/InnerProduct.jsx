@@ -29,86 +29,98 @@ const InnerProduct = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      
-      // ✅ URL से product ID get करें
-      const productId = window.location.pathname.split('/').pop();
-      
-      // ✅ API से actual product data fetch करें
-      const response = await api.getProductDetails(productId);
-      const productData = response.data;
-      
-      setProduct(productData);
-      
-      // ✅ Product के images set करें
-      if (productData.images && productData.images.length > 0) {
-        setMainImage(productData.images[0].large);
-      }
-      
-      // ✅ सबसे पहले productDetails से reviews लें
-      if (productData.reviews && productData.reviews.length > 0) {
-        // Format reviews for UI WITHOUT date
-        const formattedReviews = productData.reviews.map(review => ({
-          id: review.id,
-          name: review.name,
-          rating: review.rating,
-          text: review.text || review.comment,
-          avatar: review.avatar
-          // NO date field
-        }));
-        setReviews(formattedReviews);
-      } else {
-        // If no reviews in productDetails, check separate reviews endpoint
-        try {
-          const reviewsResponse = await api.getProductReviews(productId);
-          const dbReviews = reviewsResponse.data;
-          
-          if (dbReviews && dbReviews.length > 0) {
-            // Remove date from existing reviews too
-            const formattedReviews = dbReviews.map(review => ({
-              id: review.id,
-              name: review.name,
-              rating: review.rating,
-              text: review.text || review.comment,
-              avatar: review.avatar
-            }));
-            setReviews(formattedReviews);
-          }
-        } catch (error) {
-          console.log('No separate reviews found');
-        }
-      }
-      
-      // ✅ Rest of the code remains same...
-      // ✅ Fetch wishlist items
-      const wishlistResponse = await api.getWishlistItems();
-      setWishlistItems(wishlistResponse.data);
-      
-      // ✅ Check if current product is in wishlist
-      const isInWishlist = wishlistResponse.data.some(item => item.name === productData.name);
-      setWishlisted(isInWishlist);
-      
-      // ✅ Fetch cart items
-      const cartResponse = await api.getCartItems();
-      setCartItems(cartResponse.data);
-      
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
 
-  fetchAllData();
-}, []);
+        const productId = window.location.pathname.split('/').pop();
+        console.log('Product ID:', productId);
+
+        const response = await api.getProductDetails(productId);
+        const productData = response.data;
+        console.log('Product Data:', productData);
+
+        // ✅ FIX: Ensure product has name field (using title)
+        if (productData && !productData.name && productData.title) {
+          productData.name = productData.title;
+        }
+
+        setProduct(productData);
+
+        // ✅ FIX: Handle image URL from object or string
+        if (productData.images && productData.images.length > 0) {
+          const firstImage = productData.images[0];
+          const firstImageUrl = firstImage?.large?.url || firstImage?.large || '/img/img_lg1.webp';
+          setMainImage(firstImageUrl);
+        }
+
+        if (productData.reviews && productData.reviews.length > 0) {
+          const formattedReviews = productData.reviews.map(review => ({
+            id: review.id,
+            name: review.name,
+            rating: review.rating,
+            text: review.text || review.comment,
+            avatar: review.avatar
+          }));
+          setReviews(formattedReviews);
+        } else {
+          try {
+            const reviewsResponse = await api.getProductReviews(productId);
+            const dbReviews = reviewsResponse.data;
+
+            if (dbReviews && dbReviews.length > 0) {
+              const formattedReviews = dbReviews.map(review => ({
+                id: review.id,
+                name: review.name,
+                rating: review.rating,
+                text: review.text || review.comment,
+                avatar: review.avatar
+              }));
+              setReviews(formattedReviews);
+            }
+          } catch (error) {
+            console.log('No separate reviews found');
+          }
+        }
+
+        // Fetch wishlist items (only if logged in)
+        const token = localStorage.getItem('token');
+        if (token && token !== 'undefined' && token !== 'null') {
+          try {
+            const wishlistResponse = await api.getWishlistItems();
+            setWishlistItems(wishlistResponse.data || []);
+            // ✅ FIX: Check using product.title
+            const isInWishlist = (wishlistResponse.data || []).some(item => item.name === (productData.title || productData.name));
+            setWishlisted(isInWishlist);
+          } catch (err) {
+            console.log('Wishlist fetch skipped');
+          }
+
+          try {
+            const cartResponse = await api.getCartItems();
+            setCartItems(cartResponse.data || []);
+          } catch (err) {
+            console.log('Cart fetch skipped');
+          }
+        }
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
 
   // Auto slide reviews
   useEffect(() => {
-    reviewTimerRef.current = setInterval(() => {
-      setCurrentReviewSlide(prev => (prev + 1) % Math.ceil(reviews.length / 3));
-    }, 5000);
+    if (reviews.length > 0) {
+      reviewTimerRef.current = setInterval(() => {
+        setCurrentReviewSlide(prev => (prev + 1) % Math.ceil(reviews.length / 3));
+      }, 5000);
+    }
 
     return () => {
       if (reviewTimerRef.current) {
@@ -128,7 +140,6 @@ const InnerProduct = () => {
     setSelectedSize(size);
   };
 
-  // Helper function to get random avatar
   const getRandomAvatar = () => {
     const avatarIds = [
       '1524504388940-b1c1722653e1',
@@ -141,56 +152,66 @@ const InnerProduct = () => {
     return `https://images.unsplash.com/photo-${avatarIds[Math.floor(Math.random() * avatarIds.length)]}?w=150&auto=format&fit=crop&q=80`;
   };
 
-  // Helper function to get random color
   const getRandomColor = () => {
     const colors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Orange', 'Pink', 'Purple', 'Yellow'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // Add to Wishlist Function
   const addToWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!product) return;
 
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to add items to wishlist!');
+      return;
+    }
+
     try {
-      // Check if already in wishlist
-      const isAlreadyInWishlist = wishlistItems.some(item => item.name === product.name);
+      // Fresh check from server
+      const freshWishlist = await api.getWishlistItems();
+      const currentWishlist = freshWishlist.data || [];
+
+      // ✅ FIX: Use product.title instead of product.name
+      const productName = product.title || product.name;
+
+      const isAlreadyInWishlist = currentWishlist.some(item => item.productId === product.id || item.name === productName);
 
       if (!isAlreadyInWishlist) {
-        // Prepare wishlist item data
+        // ✅ Get correct image URL
+        let imageUrl = '/img/default.jpg';
+        if (product.images && product.images.length > 0) {
+          imageUrl = product.images[0].thumb?.url || product.images[0].large?.url || product.images[0];
+        } else if (product.image) {
+          imageUrl = typeof product.image === 'object' ? product.image.url : product.image;
+        }
+
         const wishlistItem = {
-          name: product.name,
-          image: product.images && product.images.length > 0 ? product.images[0].thumb : '/img/default.jpg',
+          productId: product.id,
+          name: productName,
+          image: imageUrl,
           color: getRandomColor(),
           size: selectedSize,
           unitPrice: product.price,
-          price: product.price,
           quantity: 1,
           inStock: true
         };
 
-        // Add to wishlist via API
         const response = await api.addToWishlist(wishlistItem);
-
-        // Update local state
-        setWishlistItems(prev => [...prev, response.data]);
+        setWishlistItems([...currentWishlist, response.data]);
         setWishlisted(true);
-
-        // Show success message
-        alert(`✓ "${product.name}" has been added to your wishlist!`);
-
+        alert(`✓ "${productName}" has been added to your wishlist!`);
       } else {
-        alert(`"${product.name}" is already in your wishlist!`);
+        alert(`"${productName}" is already in your wishlist!`);
       }
     } catch (error) {
       console.error('Error adding to wishlist:', error);
-      alert(`Failed to add "${product.name}" to wishlist. Please try again.`);
+      alert(`Failed to add "${product.title || product.name}" to wishlist. Please try again.`);
     }
   };
 
-  // Remove from Wishlist Function
   const removeFromWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -198,51 +219,99 @@ const InnerProduct = () => {
     if (!product) return;
 
     try {
-      // Find the wishlist item by name
-      const wishlistItem = wishlistItems.find(item => item.name === product.name);
+      // Fresh check from server
+      const freshWishlist = await api.getWishlistItems();
+      const currentWishlist = freshWishlist.data || [];
+
+      // ✅ FIX: Use product.title instead of product.name
+      const productName = product.title || product.name;
+
+      const wishlistItem = currentWishlist.find(item => item.productId === product.id || item.name === productName);
 
       if (wishlistItem) {
-        // Remove from wishlist via API
         await api.deleteWishlistItem(wishlistItem.id);
-
-        // Update local state
-        setWishlistItems(prev => prev.filter(item => item.id !== wishlistItem.id));
+        const updatedWishlist = currentWishlist.filter(item => item.id !== wishlistItem.id);
+        setWishlistItems(updatedWishlist);
         setWishlisted(false);
-
-        // Show success message
-        alert(`✓ "${product.name}" has been removed from your wishlist!`);
+        alert(`✓ "${productName}" has been removed from your wishlist!`);
+      } else {
+        setWishlisted(false);
+        alert(`"${productName}" was not in your wishlist.`);
       }
     } catch (error) {
       console.error('Error removing from wishlist:', error);
-      alert(`Failed to remove "${product.name}" from wishlist. Please try again.`);
+      alert(`Failed to remove "${product.title || product.name}" from wishlist. Please try again.`);
     }
   };
 
-  // Toggle Wishlist Function
   const toggleWishlist = async (e) => {
-    if (wishlisted) {
-      await removeFromWishlist(e);
-    } else {
-      await addToWishlist(e);
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ✅ Pehle check karo user logged in hai ya nahi
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to add items to wishlist!');
+      return;
+    }
+
+    try {
+      const freshWishlist = await api.getWishlistItems();
+      const currentWishlist = freshWishlist.data || [];
+      // ✅ FIX: Use product.title instead of product.name
+      const productName = product.title || product.name;
+      const isInWishlist = currentWishlist.some(item => item.productId === product.id || item.name === productName);
+
+      if (isInWishlist) {
+        await removeFromWishlist(e);
+      } else {
+        await addToWishlist(e);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      if (error.response?.status === 401) {
+        alert('Please login first to manage wishlist!');
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
     }
   };
 
-  // Add to Cart Function
   const addToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!product) return;
 
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to add items to cart!');
+      return;
+    }
+
     try {
-      // Check if already in cart
-      const isAlreadyInCart = cartItems.some(item => item.name === product.name);
+      // Fresh check from server
+      const freshCart = await api.getCartItems();
+      const currentCart = freshCart.data || [];
+
+      // ✅ FIX: Use product.title instead of product.name
+      const productName = product.title || product.name;
+
+      const isAlreadyInCart = currentCart.some(item => item.productId === product.id || item.name === productName);
 
       if (!isAlreadyInCart) {
-        // Prepare cart item data
+        // ✅ Get correct image URL
+        let imageUrl = '/img/default.jpg';
+        if (product.images && product.images.length > 0) {
+          imageUrl = product.images[0].thumb?.url || product.images[0].large?.url || product.images[0];
+        } else if (product.image) {
+          imageUrl = typeof product.image === 'object' ? product.image.url : product.image;
+        }
+
         const cartItem = {
-          name: product.name,
-          image: product.images && product.images.length > 0 ? product.images[0].thumb : '/img/default.jpg',
+          productId: product.id,
+          name: productName,
+          image: imageUrl,
           color: getRandomColor(),
           size: selectedSize,
           price: product.price,
@@ -250,21 +319,15 @@ const InnerProduct = () => {
           inStock: true
         };
 
-        // Add to cart via API
         const response = await api.addToCart(cartItem);
-
-        // Update local state
-        setCartItems(prev => [...prev, response.data]);
-
-        // Show success message
-        alert(`✓ "${product.name}" (Qty: ${quantity}) has been added to your cart!`);
-
+        setCartItems([...currentCart, response.data]);
+        alert(`✓ "${productName}" (Qty: ${quantity}) has been added to your cart!`);
       } else {
-        alert(`"${product.name}" is already in your cart!`);
+        alert(`"${productName}" is already in your cart!`);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert(`Failed to add "${product.name}" to cart. Please try again.`);
+      alert(`Failed to add "${product.title || product.name}" to cart. Please try again.`);
     }
   };
 
@@ -280,9 +343,14 @@ const InnerProduct = () => {
     });
   };
 
-  // RAZORPAY PAYMENT HANDLER FOR BUY NOW BUTTON
   const handleBuyNow = () => {
     if (!product) return;
+
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to proceed with checkout!');
+      return;
+    }
 
     if (!window.Razorpay) {
       alert("Razorpay SDK not loaded. Please refresh the page.");
@@ -290,13 +358,15 @@ const InnerProduct = () => {
     }
 
     const totalPrice = product.price * quantity;
+    // ✅ FIX: Use product.title instead of product.name
+    const productName = product.title || product.name;
 
     const options = {
-      key: "rzp_test_1DP5mmOlF5G5ag",
+      key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: totalPrice * 100,
       currency: "INR",
       name: "Navrang Hall",
-      description: `Product: ${product.name} - Size: ${selectedSize}`,
+      description: `Product: ${productName} - Size: ${selectedSize}`,
       image: "/img/logo.png",
       handler: function (response) {
         console.log("Payment Successful:", response);
@@ -309,7 +379,7 @@ const InnerProduct = () => {
         contact: "9999999999"
       },
       notes: {
-        product: product.name,
+        product: productName,
         size: selectedSize,
         quantity: quantity,
         totalAmount: totalPrice
@@ -342,47 +412,44 @@ const InnerProduct = () => {
     }
   };
 
-  // UPDATED: Save review to productDetails array (without date)
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to submit a review!');
+      return;
+    }
+
     if (!reviewForm.firstName || !reviewForm.lastName || !reviewForm.comment || reviewForm.rating === 0) {
       alert('Please fill in all fields and select a rating.');
       return;
     }
 
     try {
-      // Prepare review data WITHOUT date
       const reviewData = {
         productId: product.id,
         name: `${reviewForm.firstName} ${reviewForm.lastName}`,
         rating: reviewForm.rating,
         comment: reviewForm.comment,
-        avatar: getRandomAvatar()
-        // NO date field
       };
 
-      // Save to database
       const response = await api.addProductReview(reviewData);
       const newReview = response.data;
 
-      // Format for UI WITHOUT date
       const formattedReview = {
         id: newReview.id,
         name: newReview.name,
         rating: newReview.rating,
         text: newReview.comment || newReview.text,
-        avatar: newReview.avatar
-        // NO date field
       };
 
-      // Add new review to the beginning
       setReviews(prev => [formattedReview, ...prev]);
 
-      // Update product rating
       setProduct(prev => {
         const allReviews = [...(prev.reviews || []), formattedReview];
         const newRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-
         return {
           ...prev,
           rating: parseFloat(newRating.toFixed(1)),
@@ -390,7 +457,6 @@ const InnerProduct = () => {
         };
       });
 
-      // Reset form
       setReviewForm({
         firstName: '',
         lastName: '',
@@ -399,14 +465,14 @@ const InnerProduct = () => {
       });
       setUserRating(0);
 
-      alert('Review submitted successfully! It has been saved to the database.');
+      alert('Review submitted successfully!');
 
     } catch (error) {
       console.error('Error submitting review:', error);
       alert('Failed to submit review. Please try again.');
     }
   };
-
+  
   const renderStars = (rating, interactive = false) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -455,17 +521,14 @@ const InnerProduct = () => {
     );
   };
 
-  // Get current reviews for slider
   const getCurrentReviews = () => {
     const start = currentReviewSlide * 3;
     const end = start + 3;
     return reviews.slice(start, end);
   };
 
-  // Handle dot click
   const handleDotClick = (index) => {
     setCurrentReviewSlide(index);
-    // Reset timer
     if (reviewTimerRef.current) {
       clearInterval(reviewTimerRef.current);
     }
@@ -474,7 +537,6 @@ const InnerProduct = () => {
     }, 5000);
   };
 
-  // Calculate total dots needed
   const totalDots = Math.ceil(reviews.length / 3);
 
   if (loading) {
@@ -487,25 +549,25 @@ const InnerProduct = () => {
 
   const totalPrice = product.price * quantity;
   const totalReviews = reviews.length;
+  // ✅ FIX: Use product.title for display
+  const displayName = product.title || product.name;
 
   return (
     <>
       <HeroSection pageName="product" />
 
-      {/* Product Detail Section */}
       <section className="product-detail-section" style={{ padding: '80px 0', background: '#fff' }}>
         <Container>
           <Row>
-            {/* Product Images */}
             <Col lg={6}>
-              <div className="main-product-image" style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '400px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+              <div className="main-product-image" style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '475px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
                 <img
                   src={mainImage}
-                  alt="Dress"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  alt="Product"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', objectPosition: 'center top' }}
                   loading="lazy"
+                  onError={(e) => { e.target.src = '/img/img_lg1.webp'; }}
                 />
-                {/* Wishlist Button with Orange Stroke and White Background */}
                 <button
                   onClick={toggleWishlist}
                   className="wishlist-btn"
@@ -523,66 +585,22 @@ const InnerProduct = () => {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s',
-                    boxShadow: wishlisted
-                      ? '0 0 15px rgba(255, 126, 0, 0.4)'
-                      : '0 3px 10px rgba(0, 0, 0, 0.1)',
+                    boxShadow: wishlisted ? '0 0 15px rgba(255, 126, 0, 0.4)' : '0 3px 10px rgba(0, 0, 0, 0.1)',
                     zIndex: 10,
                     padding: 0
                   }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.1)';
-                    e.target.style.borderColor = '#FF7E00';
-                    e.target.style.boxShadow = '0 5px 15px rgba(255, 126, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.borderColor = wishlisted ? '#FF7E00' : 'rgba(0,0,0,0.1)';
-                    e.target.style.boxShadow = wishlisted
-                      ? '0 0 15px rgba(255, 126, 0, 0.4)'
-                      : '0 3px 10px rgba(0, 0, 0, 0.1)';
-                  }}
                   title={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                 >
-                  <FaHeart
-                    size={22}
-                    color={wishlisted ? '#FF7E00' : '#333'}
-                    style={{ transition: 'color 0.3s' }}
-                  />
+                  <FaHeart size={22} color={wishlisted ? '#FF7E00' : '#333'} />
                 </button>
               </div>
-              <div className="thumbnail-container" style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                {product.images && product.images.map((img, index) => (
-                  <div
-                    key={index}
-                    onClick={() => setMainImage(img.large)}
-                    className="thumbnail"
-                    style={{
-                      flex: 1,
-                      cursor: 'pointer',
-                      borderRadius: '15px',
-                      overflow: 'hidden',
-                      border: mainImage === img.large ? '3px solid #FF7E00' : '2px solid #eee',
-                      transition: 'all 0.3s',
-                      height: '120px',
-                      opacity: mainImage === img.large ? 1 : 0.7
-                    }}
-                  >
-                    <img
-                      src={img.thumb}
-                      alt={`View ${index + 1}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
+              
             </Col>
 
-            {/* Product Info */}
             <Col lg={6}>
               <div className="product-info-container" style={{ paddingLeft: '40px', paddingTop: '20px' }}>
                 <h1 className="product-name" style={{ fontSize: '32px', fontWeight: '700', color: '#2D2D2D', marginBottom: '20px' }}>
-                  {product.name}
+                  {displayName}
                 </h1>
 
                 <div className="product-price-box" style={{ background: '#FFF4E6', display: 'inline-block', padding: '10px 25px', borderRadius: '25px', marginBottom: '20px' }}>
@@ -603,36 +621,37 @@ const InnerProduct = () => {
                   </span>
                 </div>
 
-                {/* Size Selection */}
                 <div className="size-section" style={{ marginBottom: '30px' }}>
                   <div className="section-label" style={{ fontWeight: '600', color: '#2D2D2D', marginBottom: '15px', fontSize: '16px' }}>
                     Size: {selectedSize}
                   </div>
                   <div className="size-options" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    {product.sizes && product.sizes.map(size => (
-                      <button
-                        key={size}
-                        onClick={() => handleSizeSelect(size)}
-                        className="size-option"
-                        style={{
-                          padding: '10px 20px',
-                          border: selectedSize === size ? '2px solid #FF7E00' : '2px solid #e0e0e0',
-                          background: selectedSize === size ? '#FF7E00' : 'white',
-                          color: selectedSize === size ? 'white' : '#2D2D2D',
-                          borderRadius: '25px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s',
-                          minWidth: '50px'
-                        }}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {product.sizes && product.sizes.map((size, idx) => {
+                      const sizeValue = typeof size === 'object' ? size.size : size;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleSizeSelect(sizeValue)}
+                          className="size-option"
+                          style={{
+                            padding: '10px 20px',
+                            border: selectedSize === sizeValue ? '2px solid #FF7E00' : '2px solid #e0e0e0',
+                            background: selectedSize === sizeValue ? '#FF7E00' : 'white',
+                            color: selectedSize === sizeValue ? 'white' : '#2D2D2D',
+                            borderRadius: '25px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            minWidth: '50px'
+                          }}
+                        >
+                          {sizeValue}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Quantity Selection */}
                 <div className="quantity-section" style={{ marginBottom: '30px' }}>
                   <div className="quantity-controls" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <button
@@ -684,7 +703,6 @@ const InnerProduct = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="action-buttons" style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
                   <button
                     className="btn-buy-now"
@@ -728,7 +746,6 @@ const InnerProduct = () => {
             </Col>
           </Row>
 
-          {/* Tabs Section */}
           <div className="product-tabs" style={{ marginTop: '60px', borderBottom: '3px solid #f0f0f0' }}>
             <div className="tab-buttons" style={{ display: 'flex', gap: '40px' }}>
               <button
@@ -788,24 +805,23 @@ const InnerProduct = () => {
             </div>
           </div>
 
-          {/* Product Details Tab */}
           <div className="tab-content" style={{ padding: '40px 0 0' }}>
             {activeTab === 'details' && (
               <div className="tab-pane active">
-                <p style={{ color: '#666', lineHeight: '1.8', marginBottom: '20px' }}>{product.description}</p>
-                <p style={{ color: '#666', lineHeight: '1.8', marginBottom: '20px' }}>
-                  It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
-                </p>
-                <p style={{ color: '#666', lineHeight: '1.8', marginBottom: '20px' }}>
-                  There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable.
-                </p>
-                <p style={{ color: '#666', lineHeight: '1.8', marginBottom: '20px' }}>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-                </p>
+                {product.description ? (
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    <p style={{ color: '#666', lineHeight: '1.8', marginBottom: '20px' }}>
+                      {product.description}
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ color: '#999', lineHeight: '1.8', marginBottom: '20px', fontStyle: 'italic' }}>
+                    No description available for this product.
+                  </p>
+                )}
               </div>
             )}
 
-            {/* Reviews Tab */}
             {activeTab === 'reviews' && (
               <div className="tab-pane active">
                 <div className="reviews-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', paddingBottom: '20px', borderBottom: '2px solid #f0f0f0' }}>
@@ -817,7 +833,6 @@ const InnerProduct = () => {
                   </span>
                 </div>
 
-                {/* Reviews Container with Slider */}
                 {reviews && reviews.length > 0 ? (
                   <>
                     <div className="reviews-container" style={{
@@ -828,7 +843,6 @@ const InnerProduct = () => {
                       position: 'relative',
                       minHeight: '300px'
                     }}>
-                      
                       {getCurrentReviews().map(review => (
                         <div key={review.id} className="review-card" style={{
                           background: '#f8f9fa',
@@ -838,29 +852,30 @@ const InnerProduct = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           transition: 'transform 0.3s ease, opacity 0.3s ease',
-                          border: '1px solid #eee'
+                          border: '1px solid #eee',
+                          position: 'relative'
                         }}>
+                          {/* ✅ Inverted Commas - Flipped & Dark */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '20px',
+                            right: '20px',
+                            fontSize: '60px',
+                            color: '#FF7E00',
+                            // opacity: 0.3,
+                            fontFamily: 'serif',
+                            lineHeight: 1,
+                            transform: 'scaleX(-1)'
+                          }}>
+                            &ldquo;
+                          </div>
+
                           <div className="review-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
-                            <div
-                              className="reviewer-avatar"
-                              style={{
-                                width: '50px',
-                                height: '50px',
-                                borderRadius: '50%',
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                flexShrink: 0,
-                                backgroundImage: `url(${review.avatar})`,
-                                border: '2px solid #FF7E00'
-                              }}
-                              loading="lazy"
-                            ></div>
                             <div className="reviewer-info">
                               <h6 style={{ fontWeight: '600', color: '#2D2D2D', margin: 0 }}>{review.name}</h6>
                               <div className="review-rating" style={{ color: '#FFB800', fontSize: '16px', marginTop: '5px' }}>
                                 {renderReviewStars(review.rating)}
                               </div>
-                              {/* DATE REMOVED FROM HERE */}
                             </div>
                           </div>
                           <p className="review-text" style={{ color: '#666', lineHeight: '1.8', flexGrow: 1 }}>
@@ -870,7 +885,6 @@ const InnerProduct = () => {
                       ))}
                     </div>
 
-                    {/* Review Slider Dots */}
                     <div className="review-dots" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', minHeight: '20px' }}>
                       {Array.from({ length: totalDots }).map((_, index) => (
                         <div
@@ -914,7 +928,6 @@ const InnerProduct = () => {
                         transition: 'all 0.3s'
                       }}
                       onClick={() => {
-                        // Scroll to review form
                         document.getElementById('reviewForm')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
@@ -923,7 +936,6 @@ const InnerProduct = () => {
                   </div>
                 )}
 
-                {/* Add Comment Form with Light Gray Background */}
                 <div style={{
                   background: '#fff4e6',
                   padding: '60px',
@@ -1005,7 +1017,6 @@ const InnerProduct = () => {
                                   </span>
                                 ))}
                               </div>
-
                               <span style={{ color: '#666', fontSize: '16px', minWidth: '150px' }}>
                                 {userRating === 0 ? 'Click stars to rate' :
                                   userRating === 1 ? 'Poor - 1 star' :
@@ -1040,11 +1051,7 @@ const InnerProduct = () => {
                             />
                           </div>
 
-                          <div
-                            className="d-flex flex-column align-items-center"
-                            style={{ gap: '20px' }}
-                          >
-                            {/* TOP BUTTON (CENTERED) */}
+                          <div className="d-flex flex-column align-items-center" style={{ gap: '20px' }}>
                             <button
                               type="submit"
                               className="btn-submit-review"
@@ -1067,15 +1074,7 @@ const InnerProduct = () => {
                               <FaPaperPlane /> Post Your Comment
                             </button>
 
-                            {/* BOTTOM BUTTONS (SAME WIDTH AS TOP) */}
-                            <div
-                              style={{
-                                display: 'flex',
-                                gap: '15px',
-                                width: '100%',
-                                maxWidth: '420px'
-                              }}
-                            >
+                            <div style={{ display: 'flex', gap: '15px', width: '100%', maxWidth: '420px' }}>
                               <button
                                 type="button"
                                 onClick={() => setShowPreview(true)}
@@ -1106,8 +1105,8 @@ const InnerProduct = () => {
                                     lastName: '',
                                     rating: 0,
                                     comment: ''
-                                  })
-                                  setUserRating(0)
+                                  });
+                                  setUserRating(0);
                                 }}
                                 style={{
                                   flex: 1,
@@ -1153,7 +1152,6 @@ const InnerProduct = () => {
         </Container>
       </section>
 
-      {/* Preview Modal */}
       {showPreview && (
         <div style={{
           position: 'fixed',
@@ -1287,7 +1285,6 @@ const InnerProduct = () => {
         </div>
       )}
 
-      {/* Payment Status Modal */}
       {showStatusModal && (
         <div style={{
           position: 'fixed',
@@ -1377,28 +1374,26 @@ const InnerProduct = () => {
 
             <div style={{ display: 'flex', gap: '15px', marginTop: '25px' }}>
               {paymentStatus === 'success' ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setShowStatusModal(false);
-                      setPaymentStatus(null);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '12px 20px',
-                      background: '#FF7E00',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '25px',
-                      fontWeight: '600',
-                      fontSize: '16px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s'
-                    }}
-                  >
-                    Continue Shopping
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setPaymentStatus(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 20px',
+                    background: '#FF7E00',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '25px',
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
+                >
+                  Continue Shopping
+                </button>
               ) : paymentStatus === 'failed' ? (
                 <button
                   onClick={() => {

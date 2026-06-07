@@ -4,9 +4,14 @@ const Blogs: CollectionConfig = {
   slug: 'blogs',
   admin: {
     useAsTitle: 'title',
+    defaultColumns: ['title', 'author'],
   },
   access: {
     read: () => true,
+    create: ({ req }) => true,
+    update: ({ req }) => true,
+    delete: ({ req }) => true,
+    admin: ({ req }) => true,
   },
   fields: [
     {
@@ -39,13 +44,11 @@ const Blogs: CollectionConfig = {
       name: 'authorImage',
       type: 'upload',
       relationTo: 'media',
-      label: 'Author Image',
     },
     {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
-      label: 'Blog Image',
     },
     {
       name: 'excerpt',
@@ -53,46 +56,42 @@ const Blogs: CollectionConfig = {
       label: 'Short Summary (Excerpt)',
     },
     {
-      name: 'isMainBlog',
+      name: 'showOnHome',
       type: 'checkbox',
-      label: 'Show on Home Page',
+      label: '🏠 Show on Home Page',
       defaultValue: false,
-      admin: {
-        description: 'Check this box to show this blog on the home page as main blog',
-      },
+    },
+    {
+      name: 'showOnBlog',
+      type: 'checkbox',
+      label: '📄 Show on Blog Listing Page',
+      defaultValue: true,
     },
     {
       name: 'pageNumber',
       type: 'number',
+      label: 'Blog Page Number',
       defaultValue: 1,
-      admin: {
-        condition: (data, siblingData) => !siblingData?.isMainBlog,
-      },
     },
     {
       name: 'blogType',
       type: 'select',
+      label: 'Blog Type',
       options: [
-        { label: 'Main', value: 'main' },
-        { label: 'Small', value: 'small' },
+        { label: 'Main (Large Card)', value: 'main' },
+        { label: 'Small Card', value: 'small' },
       ],
       defaultValue: 'small',
-      admin: {
-        condition: (data, siblingData) => !siblingData?.isMainBlog,
-      },
     },
     {
       name: 'comments',
       type: 'array',
       fields: [
         { name: 'name', type: 'text', required: true },
+        { name: 'email', type: 'email', required: true },      // ✅ ADDED - Email field
+        { name: 'contact', type: 'text', required: true },    // ✅ ADDED - Contact number field
         { name: 'text', type: 'textarea', required: true },
-        { name: 'avatar', type: 'text' },
-        { 
-          name: 'date', 
-          type: 'date',
-          defaultValue: () => new Date().toISOString(),
-        },
+        { name: 'date', type: 'date', defaultValue: () => new Date().toISOString() },
       ],
     },
   ],

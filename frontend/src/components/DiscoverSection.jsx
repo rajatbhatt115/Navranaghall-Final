@@ -10,7 +10,9 @@ const DiscoverSection = () => {
     const fetchProducts = async () => {
       try {
         const response = await api.getDiscoverProducts();
-        setProducts(response.data || []);
+        // Handle both formats: { docs: [...] } or direct array
+        const productsData = response.data.docs || response.data || [];
+        setProducts(productsData);
       } catch (error) {
         console.error('Error fetching discover products:', error);
         setProducts([]);

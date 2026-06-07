@@ -25,7 +25,7 @@ const NavigationBar = () => {
   }, [])
 
   const checkLoginStatus = () => {
-    const token = localStorage.getItem('payload-token')
+    const token = localStorage.getItem('token') || localStorage.getItem('payload-token')
     const user = localStorage.getItem('user')
     if (token && user) {
       setIsLoggedIn(true)
@@ -35,6 +35,7 @@ const NavigationBar = () => {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('token')
     localStorage.removeItem('payload-token')
     localStorage.removeItem('user')
     setIsLoggedIn(false)
@@ -115,26 +116,26 @@ const NavigationBar = () => {
         </Container>
       </Navbar>
 
-      <style jsx global>{`
-        .top-bar { background: #FF7E00; color: #fff; padding: 10px 0; font-size: 14px; }
-        .top-bar-item { display: flex; align-items: center; }
-        .top-bar-icon { margin-right: 8px; }
-        .top-bar-icon svg { color: #fff; font-size: 16px; }
-        @media (max-width: 767.98px) {
-          .top-bar-item { flex-direction: column; text-align: center; margin-bottom: 8px; }
-          .top-bar-icon { margin-right: 0; margin-bottom: 4px; }
-          .top-bar-text { font-size: 12px; }
-        }
-        @media (max-width: 991.98px) {
-          .navbar-collapse { position: absolute; top: 100%; left: 0; right: 0; background: #fff; padding: 1rem; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 0 0 15px 15px; }
-        }
-        .logo-circle { width: 40px; height: 40px; background: #FF7E00; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; }
-        .logo-circle svg { color: #fff; font-size: 20px; }
-        .nav-item, .nav-icon { transition: all 0.3s ease; }
-        .nav-item:hover, .nav-icon:hover { transform: translateY(-2px); }
-        .icons-mob { justify-content: center; }
-        .dropdown-toggle::after { display: none !important; }
-      `}</style>
+      <style>{`
+  .top-bar { background: #FF7E00; color: #fff; padding: 10px 0; font-size: 14px; }
+  .top-bar-item { display: flex; align-items: center; }
+  .top-bar-icon { margin-right: 8px; }
+  .top-bar-icon svg { color: #fff; font-size: 16px; }
+  @media (max-width: 767.98px) {
+    .top-bar-item { flex-direction: column; text-align: center; margin-bottom: 8px; }
+    .top-bar-icon { margin-right: 0; margin-bottom: 4px; }
+    .top-bar-text { font-size: 12px; }
+  }
+  @media (max-width: 991.98px) {
+    .navbar-collapse { position: absolute; top: 100%; left: 0; right: 0; background: #fff; padding: 1rem; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 0 0 15px 15px; }
+  }
+  .logo-circle { width: 40px; height: 40px; background: #FF7E00; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; }
+  .logo-circle svg { color: #fff; font-size: 20px; }
+  .nav-item, .nav-icon { transition: all 0.3s ease; }
+  .nav-item:hover, .nav-icon:hover { transform: translateY(-2px); }
+  .icons-mob { justify-content: center; }
+  .dropdown-toggle::after { display: none !important; }
+`}</style>
     </>
   )
 }

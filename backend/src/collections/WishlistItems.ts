@@ -1,31 +1,26 @@
 import { CollectionConfig } from 'payload/types';
 
 const WishlistItems: CollectionConfig = {
-  slug: 'wishlistItems',
+  slug: 'wishlist-items',  // Consistent naming
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'user', 'quantity', 'unitPrice', 'createdAt'],
+    defaultColumns: ['name', 'user', 'unitPrice', 'createdAt'],
   },
   access: {
-    // ✅ Admin can read all, users can only read their own
     read: ({ req }) => {
-      if (req.user && req.user.collection === 'users') {
-        return { user: { equals: req.user.id } };
-      }
-      return true;
-    },
-    // ✅ Logged in users can create (frontend)
-    create: ({ req }) => {
-      return !!req.user;
-    },
-    // ✅ Users can update their own items
-    update: ({ req }) => {
       if (!req.user) return false;
+      if (req.user.role === 'admin') return true;
       return { user: { equals: req.user.id } };
     },
-    // ✅ Users can delete their own items
+    create: ({ req }) => !!req.user,
+    update: ({ req }) => {
+      if (!req.user) return false;
+      if (req.user.role === 'admin') return true;
+      return { user: { equals: req.user.id } };
+    },
     delete: ({ req }) => {
       if (!req.user) return false;
+      if (req.user.role === 'admin') return true;
       return { user: { equals: req.user.id } };
     },
   },
@@ -36,9 +31,13 @@ const WishlistItems: CollectionConfig = {
       relationTo: 'users',
       required: true,
       admin: {
-        readOnly: true,
         position: 'sidebar',
       },
+    },
+    {
+      name: 'productId',
+      type: 'text',
+      required: true,
     },
     {
       name: 'name',

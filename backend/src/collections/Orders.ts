@@ -7,19 +7,21 @@ const Orders: CollectionConfig = {
     defaultColumns: ['orderId', 'user', 'totalAmount', 'paymentStatus', 'createdAt'],
   },
   access: {
-    // ✅ Admin can read all, users can only read their own
     read: ({ req }) => {
-      if (req.user && req.user.collection === 'users') {
-        return { user: { equals: req.user.id } };
-      }
-      return true;
+      if (!req.user) return false;
+      if (req.user.role === 'admin') return true;
+      return { user: { equals: req.user.id } };
     },
-    // ❌ Disable create for everyone (only checkout can create)
-    create: () => false,
-    // ❌ Disable update for everyone
-    update: () => false,
-    // ❌ Disable delete for everyone
-    delete: () => false,
+    create: ({ req }) => !!req.user,
+    update: ({ req }) => {
+      if (!req.user) return false;
+      if (req.user.role === 'admin') return true;
+      return false;
+    },
+    delete: ({ req }) => {
+      if (req.user?.role === 'admin') return true;
+      return false;
+    },
   },
   fields: [
     {
@@ -27,9 +29,6 @@ const Orders: CollectionConfig = {
       type: 'text',
       required: true,
       unique: true,
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'user',
@@ -37,7 +36,6 @@ const Orders: CollectionConfig = {
       relationTo: 'users',
       required: true,
       admin: {
-        readOnly: true,
         position: 'sidebar',
       },
     },
@@ -45,10 +43,8 @@ const Orders: CollectionConfig = {
       name: 'items',
       type: 'array',
       required: true,
-      admin: {
-        readOnly: true,
-      },
       fields: [
+        { name: 'productId', type: 'text', required: true },
         { name: 'name', type: 'text', required: true },
         { name: 'price', type: 'number', required: true },
         { name: 'quantity', type: 'number', required: true },
@@ -60,9 +56,6 @@ const Orders: CollectionConfig = {
       name: 'totalAmount',
       type: 'number',
       required: true,
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'paymentStatus',
@@ -74,31 +67,19 @@ const Orders: CollectionConfig = {
         { label: 'Cancelled', value: 'cancelled' },
       ],
       defaultValue: 'pending',
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'razorpayOrderId',
       type: 'text',
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'razorpayPaymentId',
       type: 'text',
-      admin: {
-        readOnly: true,
-      },
     },
     {
       name: 'createdAt',
       type: 'date',
       defaultValue: () => new Date().toISOString(),
-      admin: {
-        readOnly: true,
-      },
     },
   ],
 };

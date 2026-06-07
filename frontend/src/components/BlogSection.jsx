@@ -14,6 +14,15 @@ const formatDate = (dateString) => {
   })
 }
 
+// Helper to get image URL from upload object
+const getImageUrl = (image) => {
+  if (!image) return '/img/default-blog.jpg'
+  if (typeof image === 'string') return image
+  if (image.url) return image.url
+  if (image.thumbnail?.url) return image.thumbnail.url
+  return '/img/default-blog.jpg'
+}
+
 const BlogSection = () => {
   const [blogData, setBlogData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -22,6 +31,7 @@ const BlogSection = () => {
     const fetchBlogData = async () => {
       try {
         const response = await api.getBlogHome();
+        console.log('Blog Home Response:', response.data);
         setBlogData(response.data);
       } catch (error) {
         console.error('Error fetching blog data:', error);
@@ -58,7 +68,7 @@ const BlogSection = () => {
               <div className="blog-post-card">
                 <div 
                   className="blog-post-image" 
-                  style={{ backgroundImage: `url(${mainBlog.image})` }}
+                  style={{ backgroundImage: `url(${getImageUrl(mainBlog.image)})` }}
                   loading="lazy"
                 ></div>
                 <div className="blog-post-content">
@@ -66,7 +76,7 @@ const BlogSection = () => {
                   <div className="blog-post-meta">
                     <div 
                       className="author-avatar" 
-                      style={{ backgroundImage: `url(${mainBlog.authorImage})` }}
+                      style={{ backgroundImage: `url(${getImageUrl(mainBlog.authorImage)})` }}
                       loading="lazy"
                     ></div>
                     <div className="author-info">
@@ -85,7 +95,7 @@ const BlogSection = () => {
                 <div className="small-blog-card">
                   <div 
                     className="small-blog-image" 
-                    style={{ backgroundImage: `url(${blog.image})` }}
+                    style={{ backgroundImage: `url(${getImageUrl(blog.image)})` }}
                     loading="lazy"
                   ></div>
                   <div className="small-blog-content">
@@ -94,7 +104,7 @@ const BlogSection = () => {
                     <div className="blog-post-meta">
                       <div 
                         className="author-avatar" 
-                        style={{ backgroundImage: `url(${blog.authorImage})` }}
+                        style={{ backgroundImage: `url(${getImageUrl(blog.authorImage)})` }}
                         loading="lazy"
                       ></div>
                       <div className="author-info">

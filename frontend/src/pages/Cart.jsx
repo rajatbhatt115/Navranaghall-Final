@@ -128,7 +128,7 @@ const Cart = () => {
     const productNames = cartItems.map(item => item.name).join(', ')
 
     const options = {
-      key: "rzp_test_1DP5mmOlF5G5ag", // Replace with your Razorpay key
+      key: import.meta.env.VITE_RAZORPAY_KEY, // Replace with your Razorpay key
       amount: Math.round(total * 100), // Amount in paise
       currency: "INR",
       name: "Navrang Hall",

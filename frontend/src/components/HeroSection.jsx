@@ -8,50 +8,54 @@ const HeroSection = ({ pageName, isShopPage }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchBannerData = async () => {
-      try {
-        const response = await api.getHomeBanner(pageName)
-        const banner = response.data || {}
-        
-        if (banner && banner.imageUrl) {
-          if (banner.imageUrl.startsWith('img/')) {
-            banner.imageUrl = '/' + banner.imageUrl
-          }
-          else if (!banner.imageUrl.startsWith('/') && !banner.imageUrl.startsWith('http')) {
-            banner.imageUrl = '/img/' + banner.imageUrl
-          }
+  const fetchBannerData = async () => {
+    try {
+      const response = await api.getHomeBanner(pageName)
+      const banner = response.data || {}
+      
+      // ✅ FIX: Handle image URL - could be string OR object from Payload
+      if (banner && banner.imageUrl) {
+        if (typeof banner.imageUrl === 'object' && banner.imageUrl.url) {
+          // Payload upload object - get the URL
+          banner.imageUrl = banner.imageUrl.url
+        } else if (typeof banner.imageUrl === 'string' && banner.imageUrl.startsWith('img/')) {
+          banner.imageUrl = '/' + banner.imageUrl
+        } else if (typeof banner.imageUrl === 'string' && !banner.imageUrl.startsWith('/') && !banner.imageUrl.startsWith('http')) {
+          banner.imageUrl = '/img/' + banner.imageUrl
         }
-        
-        setBannerData(banner)
-      } catch (error) {
-        console.error('Error fetching banner data:', error)
-        const fallbackData = {
-          title: pageName === 'home' ? 'New Collection' : 
-                 pageName === 'about' ? 'About Us' :
-                 pageName === 'shop' ? 'Shop' :
-                 pageName === 'blog' ? 'Blog' :
-                 pageName === 'contact' ? 'Contact Us' :
-                 pageName === 'account' ? 'Login' :
-                 pageName === 'cart' ? 'Cart' :
-                 pageName === 'wishlist' ? 'Wishlist' :
-                 pageName === 'product' ? 'Product Details' : pageName,
-          
-          subtitle: pageName === 'home' ? 'FIND WHAT BEST OPTIONS FOR YOU' : '',
-          description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-          buttonText: pageName !== 'shop' ? 'Shop Now' : '',
-          buttonLink: pageName !== 'shop' ? '/shop' : '',
-          imageUrl: '/img/img_banner_shop.webp'
-        }
-        setBannerData(fallbackData)
-      } finally {
-        setLoading(false)
       }
+      
+      console.log('✅ Banner data loaded:', banner) // Debug log
+      setBannerData(banner)
+    } catch (error) {
+      console.error('Error fetching banner data:', error)
+      const fallbackData = {
+        title: pageName === 'home' ? 'New Collection' : 
+               pageName === 'about' ? 'About Us' :
+               pageName === 'shop' ? 'Shop' :
+               pageName === 'blog' ? 'Blog' :
+               pageName === 'contact' ? 'Contact Us' :
+               pageName === 'account' ? 'Login' :
+               pageName === 'cart' ? 'Cart' :
+               pageName === 'wishlist' ? 'Wishlist' :
+               pageName === 'product' ? 'Product Details' : pageName,
+        
+        subtitle: pageName === 'home' ? 'FIND WHAT BEST OPTIONS FOR YOU' : '',
+        description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        buttonText: pageName !== 'shop' ? 'Shop Now' : '',
+        buttonLink: pageName !== 'shop' ? '/shop' : '',
+        imageUrl: '/img/img_banner_shop.webp'
+      }
+      setBannerData(fallbackData)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    if (pageName) {
-      fetchBannerData()
-    }
-  }, [pageName])
+  if (pageName) {
+    fetchBannerData()
+  }
+}, [pageName])
 
   if (loading) {
     return (

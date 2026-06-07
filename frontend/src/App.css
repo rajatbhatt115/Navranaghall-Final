@@ -356,6 +356,8 @@ footer a {
 
 .rating-image-women2 {
     background-image: url("/frontend/public/img/gown.webp");
+    background-repeat: no-repeat;
+    /* background-position: center top !important; */
 }
 
 .rating-image-women3 {
@@ -2394,6 +2396,7 @@ textarea.form-control {
     position: absolute;
     top: 0;
     left: 0;
+    object-position: center top;
 }
 
 /* Product Info */

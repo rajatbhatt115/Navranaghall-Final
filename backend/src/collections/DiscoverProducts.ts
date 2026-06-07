@@ -1,7 +1,7 @@
 import { CollectionConfig } from 'payload/types';
 
 const DiscoverProducts: CollectionConfig = {
-  slug: 'discoverProducts',
+  slug: 'discover-products',
   admin: {
     useAsTitle: 'title',
   },

@@ -12,9 +12,20 @@ const TestimonialsSection = () => {
     const fetchTestimonials = async () => {
       try {
         const response = await api.getTestimonials()
-        setTestimonials(response.data)
+        let testimonialsData = response.data || []
+        
+        // ✅ Ensure it's an array and handle image URLs
+        if (testimonialsData && testimonialsData.docs) {
+          testimonialsData = testimonialsData.docs
+        }
+        if (!Array.isArray(testimonialsData)) {
+          testimonialsData = []
+        }
+        
+        setTestimonials(testimonialsData)
       } catch (error) {
         console.error('Error fetching testimonials:', error)
+        setTestimonials([])
       } finally {
         setLoading(false)
       }
@@ -69,9 +80,15 @@ const TestimonialsSection = () => {
             {testimonials.map(testimonial => (
               <div className="testimonial-slide" key={testimonial.id}>
                 <div className="testimonial-card">
+                  {/* ✅ FIXED: Handle image URL from object */}
                   <div
                     className="testimonial-avatar1"
-                    style={{ backgroundImage: `url(${testimonial.image})` }}
+                    style={{ 
+                      backgroundImage: `url(${testimonial.image?.url || testimonial.image})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
                     loading="lazy"
                   ></div>
                   <p className="fst-italic">{testimonial.text}</p>

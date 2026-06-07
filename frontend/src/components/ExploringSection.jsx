@@ -10,9 +10,21 @@ const ExploringSection = () => {
     const fetchCategories = async () => {
       try {
         const response = await api.getCategories()
-        setCategories(response.data)
+        let categoriesData = response.data
+
+        // ✅ Safe check - agar docs hai toh extract karo
+        if (categoriesData && categoriesData.docs) {
+          categoriesData = categoriesData.docs
+        }
+        // ✅ Ensure it's an array
+        if (!Array.isArray(categoriesData)) {
+          categoriesData = []
+        }
+
+        setCategories(categoriesData)
       } catch (error) {
         console.error('Error fetching categories:', error)
+        setCategories([])
       } finally {
         setLoading(false)
       }
@@ -22,6 +34,10 @@ const ExploringSection = () => {
   }, [])
 
   if (loading) {
+    return null
+  }
+
+  if (!categories || categories.length === 0) {
     return null
   }
 
@@ -35,7 +51,12 @@ const ExploringSection = () => {
             <Col md={4} key={category.id}>
               <div
                 className="category-card"
-                style={{ backgroundImage: `url(${category.image})` }}
+                style={{ 
+                  backgroundImage: `url(${category.image?.url || category.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
                 loading="lazy"
               >
                 <div className="category-overlay">

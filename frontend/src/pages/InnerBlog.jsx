@@ -4,7 +4,7 @@ import HeroSection from '../components/HeroSection'
 import api from '../api'
 import { useParams } from 'react-router-dom'
 
-// Helper function to format date - remove time
+// Helper function to format date
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -15,15 +15,23 @@ const formatDate = (dateString) => {
   })
 }
 
+// ✅ Helper to get image URL from upload object
+const getImageUrl = (image) => {
+  if (!image) return '/img/default-blog.jpg'
+  if (typeof image === 'string') return image
+  if (image.url) return image.url
+  if (image.thumbnail?.url) return image.thumbnail.url
+  return '/img/default-blog.jpg'
+}
+
 const InnerBlog = () => {
   const { id } = useParams()
   const [blogData, setBlogData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [commentForm, setCommentForm] = useState({
-    firstName: '',
-    lastName: '',
-    contact: '',
+    name: '',
     email: '',
+    contact: '',
     message: ''
   })
   const [comments, setComments] = useState([])
@@ -32,7 +40,7 @@ const InnerBlog = () => {
     const fetchBlogData = async () => {
       try {
         setLoading(true)
-        const response = await api.getInnerBlog(id)
+        const response = await api.getBlogById(id)
         if (response.data) {
           setBlogData(response.data)
           setComments(response.data.comments || [])
@@ -62,11 +70,25 @@ const InnerBlog = () => {
   const handleCommentSubmit = async (e) => {
     e.preventDefault()
 
+    // ✅ Check if user is logged in first
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      alert('Please login first to post a comment!');
+      return;
+    }
+
+    // ✅ Validation
+    if (!commentForm.name || !commentForm.email || !commentForm.contact || !commentForm.message) {
+      alert('Please fill in all fields!')
+      return
+    }
+
     try {
       const newCommentData = {
-        name: `${commentForm.firstName} ${commentForm.lastName}`,
+        name: commentForm.name,
+        email: commentForm.email,
+        contact: commentForm.contact,
         text: commentForm.message,
-        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`
       }
 
       const response = await api.addBlogComment(id, newCommentData);
@@ -75,10 +97,9 @@ const InnerBlog = () => {
         setComments([response.data, ...comments]);
         alert('Your comment has been posted successfully!');
         setCommentForm({
-          firstName: '',
-          lastName: '',
-          contact: '',
+          name: '',
           email: '',
+          contact: '',
           message: ''
         });
       } else {
@@ -123,7 +144,7 @@ const InnerBlog = () => {
               <div
                 className="blog-post-image"
                 style={{
-                  backgroundImage: `url(${blogData.image || 'https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?q=80&w=2071'})`,
+                  backgroundImage: `url(${getImageUrl(blogData.image)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   height: '400px',
@@ -141,7 +162,7 @@ const InnerBlog = () => {
                   <div
                     className="author-avatar"
                     style={{
-                      backgroundImage: `url(${blogData.authorImage})`,
+                      backgroundImage: `url(${getImageUrl(blogData.authorImage)})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       width: '50px',
@@ -169,70 +190,68 @@ const InnerBlog = () => {
               <div className="comment-form-container">
                 <div className="comment-form">
                   <Form id="commentForm" onSubmit={handleCommentSubmit}>
-                    <Row className="mb-3">
-                      <Col md={6} className="mb-3 mb-md-0">
-                        <Form.Control
-                          type="text"
-                          id="firstName"
-                          placeholder="First Name"
-                          name="firstName"
-                          value={commentForm.firstName}
-                          onChange={handleCommentChange}
-                          required
-                        />
-                      </Col>
-                      <Col md={6}>
-                        <Form.Control
-                          type="text"
-                          id="lastName"
-                          placeholder="Last Name"
-                          name="lastName"
-                          value={commentForm.lastName}
-                          onChange={handleCommentChange}
-                          required
-                        />
-                      </Col>
-                    </Row>
-                    <Row className="mb-3">
-                      <Col md={6} className="mb-3 mb-md-0">
-                        <Form.Control
-                          type="tel"
-                          id="contact"
-                          placeholder="Contact Number"
-                          name="contact"
-                          value={commentForm.contact}
-                          onChange={handleCommentChange}
-                        />
-                      </Col>
-                      <Col md={6}>
-                        <Form.Control
-                          type="email"
-                          id="email"
-                          placeholder="Email"
-                          name="email"
-                          value={commentForm.email}
-                          onChange={handleCommentChange}
-                          required
-                        />
-                      </Col>
-                    </Row>
+
+                    {/* ✅ Name Field */}
+                    <div className="mb-3">
+                      <Form.Control
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Full Name *"
+                        value={commentForm.name}
+                        onChange={handleCommentChange}
+                        required
+                        style={{ padding: '12px 15px', borderRadius: '8px' }}
+                      />
+                    </div>
+
+                    {/* ✅ Email Field - Visible in form */}
+                    <div className="mb-3">
+                      <Form.Control
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Email Address *"
+                        value={commentForm.email}
+                        onChange={handleCommentChange}
+                        required
+                        style={{ padding: '12px 15px', borderRadius: '8px' }}
+                      />
+                    </div>
+
+                    {/* ✅ Contact Number Field - Visible in form */}
+                    <div className="mb-3">
+                      <Form.Control
+                        type="tel"
+                        id="contact"
+                        name="contact"
+                        placeholder="Contact Number *"
+                        value={commentForm.contact}
+                        onChange={handleCommentChange}
+                        required
+                        style={{ padding: '12px 15px', borderRadius: '8px' }}
+                      />
+                    </div>
+
+                    {/* ✅ Message Field */}
                     <div className="mb-4">
                       <Form.Control
                         as="textarea"
-                        style={{ height: '230px' }}
+                        style={{ height: '150px', padding: '12px 15px', borderRadius: '8px' }}
                         id="message"
-                        placeholder="Your Comment"
-                        rows={4}
                         name="message"
+                        placeholder="Your Comment *"
+                        rows={4}
                         value={commentForm.message}
                         onChange={handleCommentChange}
                         required
                       />
                     </div>
+
                     <Button
                       type="submit"
                       className="btn-post-comment w-100"
-                      style={{ backgroundColor: '#ff7e00', borderColor: '#ff7e00' }}
+                      style={{ backgroundColor: '#ff7e00', borderColor: '#ff7e00', padding: '12px', borderRadius: '8px', fontWeight: '600' }}
                     >
                       Post Comment
                     </Button>
@@ -247,25 +266,19 @@ const InnerBlog = () => {
                 <div className="comments-list-wrapper">
                   <div className="comments-list" id="commentsList">
                     {comments.map(comment => (
-                      <div className="comment-item" key={comment.id}>
-                        <div className="comment-header">
-                          <div
-                            className="comment-avatar"
-                            style={{
-                              backgroundImage: `url(${comment.avatar})`,
-                              width: '50px',
-                              height: '50px',
-                              borderRadius: '50%',
-                              backgroundSize: 'cover'
-                            }}
-                            loading="lazy"
-                          ></div>
-                          <div className="comment-author">
-                            <h5>{comment.name}</h5>
-                            <span className="comment-date">{formatDate(comment.date)}</span>
-                          </div>
+                      <div className="comment-item" key={comment.id} style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '10px' }}>
+                        {/* ✅ Sirf Name left, Date right - Email aur Phone nahi dikhenge */}
+                        <div className="comment-header" style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '10px'
+                        }}>
+                          <h5 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#333' }}>{comment.name}</h5>
+                          <span style={{ fontSize: '11px', color: '#999' }}>{formatDate(comment.date)}</span>
                         </div>
-                        <p className="comment-text">{comment.text}</p>
+                        {/* ✅ Sirf Comment text */}
+                        <p className="comment-text" style={{ color: '#666', lineHeight: '1.5', fontSize: '14px', marginLeft: '0px', marginBottom: '0px' }}>{comment.text}</p>
                       </div>
                     ))}
                   </div>

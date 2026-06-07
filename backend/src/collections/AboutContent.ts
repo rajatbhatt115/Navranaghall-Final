@@ -1,9 +1,10 @@
 import { CollectionConfig } from 'payload/types';
 
 const AboutContent: CollectionConfig = {
-  slug: 'aboutContent',
+  slug: 'about-contents',
   admin: {
     useAsTitle: 'experienceTitle',
+    group: 'Content',
   },
   access: {
     read: () => true,
