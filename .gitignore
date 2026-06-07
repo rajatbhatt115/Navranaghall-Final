@@ -20,6 +20,22 @@ build/
 *.tsbuildinfo
 
 # ====================
+# TEST FILES (NEVER COMMIT)
+# ====================
+**/test-*.ts
+**/test-*.js
+**/test-*.tsx
+**/test-*.jsx
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+backend/test-*
+frontend/test-*
+__tests__/
+**/__tests__/
+
+# ====================
 # ENVIRONMENT FILES (CRITICAL - NEVER COMMIT)
 # ====================
 .env
