@@ -4,40 +4,43 @@
  * NEVER commit payload.config.ts to git!
  */
 
-import { buildConfig } from 'payload/config';
+import { buildConfig } from 'payload/config.js';
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
 import { slateEditor } from '@payloadcms/richtext-slate';
 import { webpackBundler } from '@payloadcms/bundler-webpack';
 
 // Collections
-import Users from './collections/Users';
-import Media from './collections/Media';           // ✅ ADD THIS
-import HomeBanners from './collections/HomeBanners';
-import DiscoverProducts from './collections/DiscoverProducts';
-import AboutContent from './collections/AboutContent';
-import Categories from './collections/Categories';
-import TopRatingProducts from './collections/TopRatingProducts';
-import Testimonials from './collections/Testimonials';
-import Blogs from './collections/Blogs';
-import Products from './collections/Products';
-import Team from './collections/Team';
-import CartItems from './collections/CartItems';
-import WishlistItems from './collections/WishlistItems';
-import Orders from './collections/Orders';
+import Users from './collections/Users.js';
+import Media from './collections/Media.js';
+import HomeBanners from './collections/HomeBanners.js';
+import DiscoverProducts from './collections/DiscoverProducts.js';
+import AboutContent from './collections/AboutContent.js';
+import Categories from './collections/Categories.js';
+import TopRatingProducts from './collections/TopRatingProducts.js';
+import Testimonials from './collections/Testimonials.js';
+import Blogs from './collections/Blogs.js';
+import Products from './collections/Products.js';
+import Team from './collections/Team.js';
+import CartItems from './collections/CartItems.js';
+import WishlistItems from './collections/WishlistItems.js';
+import Orders from './collections/Orders.js';
 
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:5000',
   admin: {
     user: Users.slug,
     bundler: webpackBundler(),
+    meta: {
+      titleSuffix: '- Navrang Hall Admin',
+    },
   },
   editor: slateEditor({}),
   db: mongooseAdapter({
-    url: process.env.MONGODB_URI || '',  // ALWAYS use env variable, never hardcode!
+    url: process.env.MONGODB_URI || '',
   }),
   collections: [
     Users,
-    Media,                                 // ✅ ADD THIS
+    Media,
     HomeBanners,
     DiscoverProducts,
     AboutContent,
@@ -51,6 +54,6 @@ export default buildConfig({
     WishlistItems,
     Orders,
   ],
-  cors: ['http://localhost:3000'],
+  cors: ['http://localhost:3000', 'http://localhost:5000'],
   csrf: ['http://localhost:3000'],
 });
