@@ -11,6 +11,7 @@ import { webpackBundler } from '@payloadcms/bundler-webpack';
 
 // Collections
 import Users from './collections/Users';
+import Media from './collections/Media';           // ✅ ADD THIS
 import HomeBanners from './collections/HomeBanners';
 import DiscoverProducts from './collections/DiscoverProducts';
 import AboutContent from './collections/AboutContent';
@@ -36,6 +37,7 @@ export default buildConfig({
   }),
   collections: [
     Users,
+    Media,                                 // ✅ ADD THIS
     HomeBanners,
     DiscoverProducts,
     AboutContent,
