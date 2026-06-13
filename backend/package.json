@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts nodemon",
-    "build": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload build",
+    "build": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.example.ts payload build",
     "start": "node dist/server.js",
     "serve": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload serve"
   },
