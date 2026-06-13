@@ -9,8 +9,9 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb';
 import { slateEditor } from '@payloadcms/richtext-slate';
 import { webpackBundler } from '@payloadcms/bundler-webpack';
 
-// Collections
+// Collections - .js HATAO, .ts hi rahega
 import Users from './collections/Users';
+import Media from './collections/Media';
 import HomeBanners from './collections/HomeBanners';
 import DiscoverProducts from './collections/DiscoverProducts';
 import AboutContent from './collections/AboutContent';
@@ -29,13 +30,17 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     bundler: webpackBundler(),
+    meta: {
+      titleSuffix: '- Navrang Hall Admin',
+    },
   },
   editor: slateEditor({}),
   db: mongooseAdapter({
-    url: process.env.MONGODB_URI || '',  // ALWAYS use env variable, never hardcode!
+    url: process.env.MONGODB_URI || '',
   }),
   collections: [
     Users,
+    Media,
     HomeBanners,
     DiscoverProducts,
     AboutContent,
@@ -49,6 +54,6 @@ export default buildConfig({
     WishlistItems,
     Orders,
   ],
-  cors: ['http://localhost:3000'],
+  cors: ['http://localhost:3000', 'http://localhost:5000'],
   csrf: ['http://localhost:3000'],
 });
